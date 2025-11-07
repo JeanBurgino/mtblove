@@ -7,7 +7,7 @@
  * TODO: Instagram API Integration für Post-Analytics
  */
 
-require_once '../../config/config.php';
+require_once __DIR__ . '/../../config/config.php';
 
 // Login-Pflicht für diese Seite
 requireLogin();

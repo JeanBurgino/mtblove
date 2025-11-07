@@ -6,7 +6,7 @@
  * Verwendet sichere Session-basierte Authentifizierung
  */
 
-require_once '../config/config.php';
+require_once __DIR__ . '/../config/config.php';
 
 // Wenn bereits eingeloggt, zum Admin Center weiterleiten
 if (isLoggedIn()) {

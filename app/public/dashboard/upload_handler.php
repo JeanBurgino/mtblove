@@ -6,8 +6,8 @@
  * Gibt JSON-Response zurück für AJAX-Requests
  */
 
-require_once '../../config/config.php';
-require_once '../../includes/functions.php';
+require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../../includes/functions.php';
 
 // Login-Pflicht
 requireLogin();

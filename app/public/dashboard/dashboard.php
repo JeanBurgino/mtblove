@@ -23,21 +23,42 @@ try {
     $stmt = $pdo->query("SELECT COUNT(*) as today FROM memes WHERE DATE(created_at) = CURDATE()");
     $stats['memes_today'] = $stmt->fetch()['today'] ?? 0;
 
-    // Anzahl aktiver Benutzer (TODO: erweitern)
-    $stmt = $pdo->query("SELECT COUNT(*) as users FROM users WHERE active = 1");
-    $stats['total_users'] = $stmt->fetch()['users'] ?? 0;
+    // Instagram Posts Statistiken
+    $stmt = $pdo->query("SELECT COUNT(*) as total FROM instagram_posts");
+    $stats['total_instagram_posts'] = $stmt->fetch()['total'] ?? 0;
 
-    // TODO: Anzahl Views/Likes für Analytics
-    $stats['total_views'] = 0; // Placeholder
+    // Instagram Analytics Summary
+    $stmt = $pdo->query("SELECT * FROM instagram_analytics_summary");
+    $ig_summary = $stmt->fetch();
+    $stats['total_views'] = $ig_summary['total_views'] ?? 0;
+    $stats['total_likes'] = $ig_summary['total_likes'] ?? 0;
+    $stats['avg_engagement'] = $ig_summary['avg_engagement_rate'] ?? 0;
+
+    // Anzahl Benutzer
+    $stmt = $pdo->query("SELECT COUNT(*) as users FROM users");
+    $stats['total_users'] = $stmt->fetch()['users'] ?? 0;
 
     // Neueste Memes abrufen
     $stmt = $pdo->query("SELECT * FROM memes ORDER BY created_at DESC LIMIT 10");
     $recent_memes = $stmt->fetchAll();
 
+    // Top Instagram Posts abrufen
+    $stmt = $pdo->query("SELECT * FROM top_instagram_posts LIMIT 5");
+    $top_ig_posts = $stmt->fetchAll();
+
 } catch (PDOException $e) {
     error_log('Dashboard stats error: ' . $e->getMessage());
-    $stats = ['total_memes' => 0, 'memes_today' => 0, 'total_users' => 0, 'total_views' => 0];
+    $stats = [
+        'total_memes' => 0,
+        'memes_today' => 0,
+        'total_users' => 0,
+        'total_views' => 0,
+        'total_likes' => 0,
+        'total_instagram_posts' => 0,
+        'avg_engagement' => 0
+    ];
     $recent_memes = [];
+    $top_ig_posts = [];
 }
 
 // Upload-Ergebnis aus Session abrufen (nach Redirect vom upload_handler)
@@ -113,16 +134,79 @@ require_once TEMPLATE_PATH . '/header.php';
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="card-title mb-0">Views</h6>
+                            <h6 class="card-title mb-0">Instagram Views</h6>
                             <h2 class="mb-0"><?php echo number_format($stats['total_views']); ?></h2>
                         </div>
                         <i class="bi bi-eye" style="font-size: 2.5rem; opacity: 0.5;"></i>
                     </div>
                 </div>
             </div>
-            <!-- TODO: Analytics-Integration für echte View-Zahlen -->
         </div>
     </div>
+
+    <!-- Instagram Analytics Karten -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3 col-sm-6">
+            <div class="card border-instagram">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0 text-muted">Instagram Posts</h6>
+                            <h2 class="mb-0 text-instagram"><?php echo number_format($stats['total_instagram_posts']); ?></h2>
+                        </div>
+                        <i class="bi bi-instagram text-instagram" style="font-size: 2.5rem; opacity: 0.5;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6">
+            <div class="card border-danger">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0 text-muted">Total Likes</h6>
+                            <h2 class="mb-0 text-danger"><?php echo number_format($stats['total_likes']); ?></h2>
+                        </div>
+                        <i class="bi bi-heart-fill text-danger" style="font-size: 2.5rem; opacity: 0.5;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6">
+            <div class="card border-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0 text-muted">Ø Engagement</h6>
+                            <h2 class="mb-0 text-success"><?php echo number_format($stats['avg_engagement'], 1); ?>%</h2>
+                        </div>
+                        <i class="bi bi-graph-up text-success" style="font-size: 2.5rem; opacity: 0.5;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6">
+            <div class="card border-primary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0 text-muted">Benutzer</h6>
+                            <h2 class="mb-0 text-primary"><?php echo $stats['total_users']; ?></h2>
+                        </div>
+                        <i class="bi bi-people text-primary" style="font-size: 2.5rem; opacity: 0.5;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .text-instagram { color: #E4405F; }
+        .border-instagram { border: 2px solid #E4405F; }
+    </style>
 
     <div class="row">
         <!-- Meme Upload Form -->
@@ -163,23 +247,41 @@ require_once TEMPLATE_PATH . '/header.php';
                         </div>
 
                         <div class="mb-3">
-                            <label for="caption" class="form-label">Caption/Beschreibung</label>
+                            <label for="description" class="form-label">Beschreibung</label>
                             <textarea class="form-control"
-                                      id="caption"
-                                      name="caption"
+                                      id="description"
+                                      name="description"
                                       rows="3"
                                       placeholder="Optionale Beschreibung..."></textarea>
-                            <!-- TODO: Caption-Text wird später für Suchfunktion verwendet -->
                         </div>
 
                         <div class="mb-3">
-                            <label for="tags" class="form-label">Tags</label>
-                            <input type="text"
-                                   class="form-control"
-                                   id="tags"
-                                   name="tags"
-                                   placeholder="lustig, katze, montag">
-                            <!-- TODO: Tag-System für bessere Kategorisierung -->
+                            <label for="category" class="form-label">Kategorie</label>
+                            <select class="form-select"
+                                    id="category"
+                                    name="category">
+                                <option value="">Keine Kategorie</option>
+                                <option value="Lustig">Lustig</option>
+                                <option value="Witzig">Witzig</option>
+                                <option value="Motivation">Motivation</option>
+                                <option value="Relatable">Relatable</option>
+                                <option value="Trending">Trending</option>
+                                <option value="Intern">Intern</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input"
+                                       type="checkbox"
+                                       id="is_public"
+                                       name="is_public"
+                                       value="1"
+                                       checked>
+                                <label class="form-check-label" for="is_public">
+                                    Öffentlich sichtbar
+                                </label>
+                            </div>
                         </div>
 
                         <div class="d-grid">
@@ -220,12 +322,17 @@ require_once TEMPLATE_PATH . '/header.php';
                                     <?php foreach ($recent_memes as $meme): ?>
                                         <tr>
                                             <td>
-                                                <img src="<?php echo htmlspecialchars($meme['file_path']); ?>"
+                                                <img src="<?php echo htmlspecialchars($meme['image_url']); ?>"
                                                      alt="Meme"
                                                      class="img-thumbnail"
                                                      style="width: 50px; height: 50px; object-fit: cover;">
                                             </td>
-                                            <td><?php echo htmlspecialchars($meme['title'] ?? 'Ohne Titel'); ?></td>
+                                            <td>
+                                                <?php echo htmlspecialchars($meme['title'] ?? 'Ohne Titel'); ?>
+                                                <?php if (!$meme['is_public']): ?>
+                                                    <span class="badge bg-warning text-dark ms-1">Privat</span>
+                                                <?php endif; ?>
+                                            </td>
                                             <td>
                                                 <small class="text-muted">
                                                     <?php echo date('d.m.Y H:i', strtotime($meme['created_at'])); ?>

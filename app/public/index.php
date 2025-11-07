@@ -23,21 +23,21 @@ $total_memes = 0;
 
 try {
     // WHERE-Bedingungen aufbauen
-    $where_clauses = [];
+    $where_clauses = ['is_public = 1']; // Nur öffentliche Memes anzeigen
     $params = [];
 
     if (!empty($search_query)) {
-        $where_clauses[] = "(title LIKE ? OR caption LIKE ?)";
+        $where_clauses[] = "(title LIKE ? OR description LIKE ?)";
         $params[] = "%{$search_query}%";
         $params[] = "%{$search_query}%";
     }
 
     if (!empty($tag_filter)) {
-        $where_clauses[] = "tags LIKE ?";
-        $params[] = "%{$tag_filter}%";
+        $where_clauses[] = "category = ?";
+        $params[] = $tag_filter;
     }
 
-    $where_sql = !empty($where_clauses) ? 'WHERE ' . implode(' AND ', $where_clauses) : '';
+    $where_sql = 'WHERE ' . implode(' AND ', $where_clauses);
 
     // Gesamtanzahl für Pagination
     $count_sql = "SELECT COUNT(*) as total FROM memes {$where_sql}";
@@ -148,7 +148,7 @@ require_once TEMPLATE_PATH . '/header.php';
                 <div class="col-lg-3 col-md-4 col-sm-6">
                     <div class="card meme-card shadow-sm h-100">
                         <!-- Meme-Bild -->
-                        <img src="<?php echo htmlspecialchars($meme['file_path']); ?>"
+                        <img src="<?php echo htmlspecialchars($meme['image_url']); ?>"
                              class="card-img-top meme-img"
                              alt="<?php echo htmlspecialchars($meme['title'] ?? 'Meme'); ?>"
                              loading="lazy"
@@ -160,26 +160,20 @@ require_once TEMPLATE_PATH . '/header.php';
                                 <?php echo htmlspecialchars($meme['title'] ?? 'Ohne Titel'); ?>
                             </h6>
 
-                            <?php if (!empty($meme['caption'])): ?>
+                            <?php if (!empty($meme['description'])): ?>
                                 <p class="card-text text-muted small">
-                                    <?php echo htmlspecialchars(substr($meme['caption'], 0, 80)); ?>
-                                    <?php if (strlen($meme['caption']) > 80) echo '...'; ?>
+                                    <?php echo htmlspecialchars(substr($meme['description'], 0, 80)); ?>
+                                    <?php if (strlen($meme['description']) > 80) echo '...'; ?>
                                 </p>
                             <?php endif; ?>
 
-                            <!-- Tags -->
-                            <?php if (!empty($meme['tags'])): ?>
+                            <!-- Kategorie -->
+                            <?php if (!empty($meme['category'])): ?>
                                 <div class="mb-2">
-                                    <?php
-                                    $tags = explode(',', $meme['tags']);
-                                    foreach (array_slice($tags, 0, 3) as $tag):
-                                        $tag = trim($tag);
-                                    ?>
-                                        <a href="?tag=<?php echo urlencode($tag); ?>"
-                                           class="badge bg-secondary text-decoration-none">
-                                            #<?php echo htmlspecialchars($tag); ?>
-                                        </a>
-                                    <?php endforeach; ?>
+                                    <a href="?tag=<?php echo urlencode($meme['category']); ?>"
+                                       class="badge bg-secondary text-decoration-none">
+                                        <?php echo htmlspecialchars($meme['category']); ?>
+                                    </a>
                                 </div>
                             <?php endif; ?>
                         </div>
@@ -209,13 +203,13 @@ require_once TEMPLATE_PATH . '/header.php';
                                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                 </div>
                                 <div class="modal-body text-center">
-                                    <img src="<?php echo htmlspecialchars($meme['file_path']); ?>"
+                                    <img src="<?php echo htmlspecialchars($meme['image_url']); ?>"
                                          class="img-fluid"
                                          alt="<?php echo htmlspecialchars($meme['title'] ?? 'Meme'); ?>">
 
-                                    <?php if (!empty($meme['caption'])): ?>
+                                    <?php if (!empty($meme['description'])): ?>
                                         <p class="mt-3 text-start">
-                                            <?php echo nl2br(htmlspecialchars($meme['caption'])); ?>
+                                            <?php echo nl2br(htmlspecialchars($meme['description'])); ?>
                                         </p>
                                     <?php endif; ?>
                                 </div>

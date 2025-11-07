@@ -6,11 +6,11 @@
 -- ============================================================
 
 -- Datenbank erstellen (falls nicht vorhanden)
-CREATE DATABASE IF NOT EXISTS meme_gallery
+CREATE DATABASE IF NOT EXISTS mtblove
 CHARACTER SET utf8mb4
 COLLATE utf8mb4_unicode_ci;
 
-USE meme_gallery;
+USE mtblove;
 
 -- ============================================================
 -- Tabelle: users

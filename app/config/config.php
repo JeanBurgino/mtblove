@@ -27,9 +27,9 @@ ini_set('display_errors', 1);
 
 // Datenbank-Konfiguration
 define('DB_HOST', 'localhost');
-define('DB_NAME', 'meme_gallery');
-define('DB_USER', 'root');
-define('DB_PASS', '');
+define('DB_NAME', 'mtblove');
+define('DB_USER', 'mtblove_admin');
+define('DB_PASS', 'W5vSzoCB1UniJpGZfQU9');
 define('DB_CHARSET', 'utf8mb4');
 
 // Anwendungspfade

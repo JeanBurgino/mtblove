@@ -12,14 +12,12 @@ RewriteBase /
 
 # Verhindere direkten Zugriff auf config-Dateien
 <FilesMatch "^(config\.php)$">
-    Order allow,deny
-    Deny from all
+    Require all denied
 </FilesMatch>
 
 # Schütze sensible Verzeichnisse
-<DirectoryMatch "\.git|app/config|app/includes">
-    Order allow,deny
-    Deny from all
+<DirectoryMatch "(\.git|app/config|app/includes)">
+    Require all denied
 </DirectoryMatch>
 
 # Clean URLs - Route Mapping
@@ -43,8 +41,9 @@ RewriteRule ^memes/(.*)$ app/public/memes/$1 [L]
     # Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' cdn.jsdelivr.net; img-src 'self' data: *;"
 </IfModule>
 
-# PHP-Einstellungen
-<IfModule mod_php7.c>
+# PHP-Einstellungen (für mod_php - funktioniert nicht mit PHP-FPM)
+# Wenn PHP-FPM verwendet wird, Einstellungen in php.ini anpassen
+<IfModule mod_php.c>
     php_value upload_max_filesize 5M
     php_value post_max_size 5M
     php_value max_execution_time 300

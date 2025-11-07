@@ -5,7 +5,7 @@
  * Beendet die Benutzersitzung sicher und leitet zur Startseite weiter
  */
 
-require_once '../config/config.php';
+require_once __DIR__ . '/../config/config.php';
 
 // TODO: Logout-Event für Analytics tracken
 // if (isLoggedIn()) {

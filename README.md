@@ -226,6 +226,91 @@ Passwort-Hash generieren mit PHP:
 echo password_hash('meinpasswort123', PASSWORD_DEFAULT);
 ```
 
+## Troubleshooting
+
+### 500 Internal Server Error
+
+Wenn du einen 500 Error beim Aufruf der Seite erhältst, führe folgende Schritte durch:
+
+#### 1. Setup-Check ausführen
+
+Rufe im Browser auf:
+```
+http://mtblove.com/setup-check.php
+```
+
+Diese Seite zeigt alle Probleme und fehlende Voraussetzungen an.
+
+#### 2. Häufige Ursachen
+
+**Problem: Datenbankverbindung fehlgeschlagen**
+```bash
+# Prüfe ob MySQL läuft
+sudo systemctl status mysql
+
+# Importiere das Schema
+mysql -u root -p < app/config/schema.sql
+
+# Prüfe DB-Credentials in app/config/config.php
+```
+
+**Problem: mod_rewrite nicht aktiviert**
+```bash
+# Apache mod_rewrite aktivieren
+sudo a2enmod rewrite
+sudo systemctl restart apache2
+```
+
+**Problem: .htaccess wird ignoriert**
+```apache
+# In deiner Apache VirtualHost-Config:
+<Directory /var/www/mtblove>
+    AllowOverride All
+</Directory>
+```
+
+**Problem: Session-Cookie-Fehler**
+- Die Anwendung erkennt automatisch HTTP/HTTPS
+- Bei Reverse-Proxy (nginx) setze: `HTTP_X_FORWARDED_PROTO` Header
+
+**Problem: Upload-Verzeichnis nicht beschreibbar**
+```bash
+chmod 755 app/public/memes/uploads
+```
+
+#### 3. Debug-Modus aktivieren
+
+Falls setup-check.php auch einen 500 Error liefert:
+
+1. Rufe `test.php` auf - wenn das funktioniert, ist PHP OK
+2. Prüfe Apache Error-Log:
+```bash
+tail -f /var/log/apache2/error.log
+```
+
+3. Temporär in `.htaccess` auskommentieren:
+```apache
+# Kommentiere alle RewriteRules aus, um .htaccess-Probleme auszuschließen
+```
+
+#### 4. PHP-Fehler anzeigen
+
+In `index.php` ist bereits aktiviert:
+```php
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+```
+
+Falls du weitere Details brauchst, prüfe:
+- Apache Error-Log: `/var/log/apache2/error.log`
+- PHP Error-Log: `/var/log/php/error.log`
+
+#### 5. Nach erfolgreicher Einrichtung
+
+Lösche diese Dateien aus Sicherheitsgründen:
+- `setup-check.php`
+- `test.php`
+
 ## Sicherheitshinweise
 
 ### Vor dem Produktiv-Einsatz
@@ -233,10 +318,11 @@ echo password_hash('meinpasswort123', PASSWORD_DEFAULT);
 1. **Demo-Account entfernen oder Passwort ändern**
 2. **`display_errors` in config.php auf `0` setzen**
 3. **Starke Passwörter verwenden**
-4. **HTTPS aktivieren** (Let's Encrypt)
-5. **`session.cookie_secure` auf `1` setzen** (in config.php, Zeile 11)
+4. **HTTPS aktivieren** (Let's Encrypt) - Session-Cookies werden dann automatisch auf "secure" gesetzt
+5. **HTTPS-Redirect aktivieren** (in .htaccess auskommentiert)
 6. **Datenbank-Zugangsdaten sichern**
-7. **Regelmäßige Backups erstellen**
+7. **Test- und Setup-Dateien löschen** (setup-check.php, test.php)
+8. **Regelmäßige Backups erstellen**
 
 ### Dateirechte
 

@@ -9,7 +9,13 @@
 // Session-Sicherheitseinstellungen
 ini_set('session.cookie_httponly', 1);
 ini_set('session.use_only_cookies', 1);
-ini_set('session.cookie_secure', 1); // HTTPS aktiviert für mtblove.com
+
+// Cookie-Secure nur bei HTTPS aktivieren
+$is_https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+    || $_SERVER['SERVER_PORT'] == 443
+    || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+
+ini_set('session.cookie_secure', $is_https ? 1 : 0);
 session_start();
 
 // Zeitzone setzen
@@ -53,9 +59,17 @@ try {
     ];
     $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
 } catch (PDOException $e) {
-    // TODO: Später hier besseres Error-Logging implementieren
+    // Error-Logging
+    error_log('Database connection failed: ' . $e->getMessage());
+
+    // In Produktion: Generische Fehlermeldung
+    if (ini_get('display_errors')) {
+        die('<h1>Datenbankverbindung fehlgeschlagen</h1><p>' . htmlspecialchars($e->getMessage()) . '</p><p><strong>Prüfe:</strong></p><ul><li>MySQL-Server läuft</li><li>Datenbank existiert</li><li>Credentials in config.php korrekt</li><li>Schema wurde importiert (app/config/schema.sql)</li></ul>');
+    } else {
+        die('<h1>Service temporarily unavailable</h1><p>Please try again later.</p>');
+    }
+
     // TODO: Analytics-Event für DB-Fehler senden
-    die('Datenbankverbindung fehlgeschlagen: ' . $e->getMessage());
 }
 
 // Hilfsfunktion für sichere Redirects

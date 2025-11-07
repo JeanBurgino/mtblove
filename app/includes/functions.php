@@ -149,6 +149,71 @@ function saveMeme($file, $title, $description, $category, $user_id, $is_public =
 }
 
 /**
+ * Aktualisiert ein Meme
+ *
+ * @param int $meme_id ID des Memes
+ * @param string $title Titel des Memes
+ * @param string $description Beschreibung
+ * @param string $category Kategorie
+ * @param bool $is_public Öffentlich sichtbar
+ * @param int $user_id User-ID (nur eigene Memes oder Admin)
+ * @return array ['success' => bool, 'message' => string]
+ */
+function updateMeme($meme_id, $title, $description, $category, $is_public, $user_id) {
+    global $pdo;
+
+    $result = ['success' => false, 'message' => ''];
+
+    try {
+        // Meme-Daten abrufen
+        $stmt = $pdo->prepare("SELECT * FROM memes WHERE id = ?");
+        $stmt->execute([$meme_id]);
+        $meme = $stmt->fetch();
+
+        if (!$meme) {
+            $result['message'] = 'Meme nicht gefunden.';
+            return $result;
+        }
+
+        // Berechtigung prüfen (nur eigene Memes oder Admin)
+        if ($meme['created_by'] != $user_id && $_SESSION['role'] !== 'admin') {
+            $result['message'] = 'Keine Berechtigung.';
+            return $result;
+        }
+
+        // Meme aktualisieren
+        $stmt = $pdo->prepare("
+            UPDATE memes
+            SET title = ?, description = ?, category = ?, is_public = ?
+            WHERE id = ?
+        ");
+
+        $stmt->execute([
+            $title,
+            $description,
+            $category,
+            $is_public ? 1 : 0,
+            $meme_id
+        ]);
+
+        $result['success'] = true;
+        $result['message'] = 'Meme erfolgreich aktualisiert.';
+
+        // Analytics-Event tracken
+        trackEvent('meme_updated', [
+            'meme_id' => $meme_id,
+            'user_id' => $user_id
+        ]);
+
+    } catch (PDOException $e) {
+        $result['message'] = 'Fehler beim Aktualisieren: ' . $e->getMessage();
+        error_log('Meme update error: ' . $e->getMessage());
+    }
+
+    return $result;
+}
+
+/**
  * Löscht ein Meme
  *
  * @param int $meme_id ID des Memes
@@ -172,13 +237,13 @@ function deleteMeme($meme_id, $user_id) {
         }
 
         // Berechtigung prüfen (nur eigene Memes oder Admin)
-        if ($meme['user_id'] != $user_id && $_SESSION['role'] !== 'admin') {
+        if ($meme['created_by'] != $user_id && $_SESSION['role'] !== 'admin') {
             $result['message'] = 'Keine Berechtigung.';
             return $result;
         }
 
         // Datei löschen
-        $file_path = BASE_PATH . $meme['file_path'];
+        $file_path = UPLOAD_PATH . '/' . basename($meme['image_url']);
         if (file_exists($file_path)) {
             @unlink($file_path);
         }
@@ -193,8 +258,11 @@ function deleteMeme($meme_id, $user_id) {
         $result['success'] = true;
         $result['message'] = 'Meme erfolgreich gelöscht.';
 
-        // TODO: Analytics-Event senden
-        // trackEvent('meme_deleted', ['meme_id' => $meme_id]);
+        // Analytics-Event tracken
+        trackEvent('meme_deleted', [
+            'meme_id' => $meme_id,
+            'user_id' => $user_id
+        ]);
 
     } catch (PDOException $e) {
         $result['message'] = 'Fehler beim Löschen: ' . $e->getMessage();

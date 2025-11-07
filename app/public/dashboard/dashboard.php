@@ -70,6 +70,14 @@ try {
 $upload_result = $_SESSION['upload_result'] ?? null;
 unset($_SESSION['upload_result']);
 
+// Edit-Ergebnis aus Session abrufen
+$edit_result = $_SESSION['edit_result'] ?? null;
+unset($_SESSION['edit_result']);
+
+// Delete-Ergebnis aus Session abrufen
+$delete_result = $_SESSION['delete_result'] ?? null;
+unset($_SESSION['delete_result']);
+
 $page_title = 'Admin Center - Instagram Analytics';
 require_once TEMPLATE_PATH . '/header.php';
 ?>
@@ -254,6 +262,23 @@ require_once TEMPLATE_PATH . '/header.php';
     <div class="tab-content" id="adminTabsContent">
         <!-- Tab 1: Image Upload -->
         <div class="tab-pane fade show active" id="upload" role="tabpanel" aria-labelledby="upload-tab">
+            <!-- Benachrichtigungen für Edit/Delete -->
+            <?php if ($edit_result): ?>
+                <div class="alert alert-<?php echo $edit_result['success'] ? 'success' : 'danger'; ?> alert-dismissible fade show" role="alert">
+                    <i class="bi bi-<?php echo $edit_result['success'] ? 'check-circle' : 'exclamation-triangle'; ?>"></i>
+                    <?php echo htmlspecialchars($edit_result['message']); ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            <?php endif; ?>
+
+            <?php if ($delete_result): ?>
+                <div class="alert alert-<?php echo $delete_result['success'] ? 'success' : 'danger'; ?> alert-dismissible fade show" role="alert">
+                    <i class="bi bi-<?php echo $delete_result['success'] ? 'check-circle' : 'exclamation-triangle'; ?>"></i>
+                    <?php echo htmlspecialchars($delete_result['message']); ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            <?php endif; ?>
+
             <div class="row">
                 <!-- Image Upload Form -->
                 <div class="col-lg-4 mb-4">
@@ -382,10 +407,19 @@ require_once TEMPLATE_PATH . '/header.php';
                                                         </small>
                                                     </td>
                                                     <td>
-                                                        <button class="btn btn-sm btn-outline-primary" title="Bearbeiten">
+                                                        <button class="btn btn-sm btn-outline-primary edit-meme-btn"
+                                                                title="Bearbeiten"
+                                                                data-meme-id="<?php echo $meme['id']; ?>"
+                                                                data-title="<?php echo htmlspecialchars($meme['title'] ?? ''); ?>"
+                                                                data-description="<?php echo htmlspecialchars($meme['description'] ?? ''); ?>"
+                                                                data-category="<?php echo htmlspecialchars($meme['category'] ?? ''); ?>"
+                                                                data-is-public="<?php echo $meme['is_public'] ? '1' : '0'; ?>">
                                                             <i class="bi bi-pencil"></i>
                                                         </button>
-                                                        <button class="btn btn-sm btn-outline-danger" title="Löschen">
+                                                        <button class="btn btn-sm btn-outline-danger delete-meme-btn"
+                                                                title="Löschen"
+                                                                data-meme-id="<?php echo $meme['id']; ?>"
+                                                                data-title="<?php echo htmlspecialchars($meme['title'] ?? 'Ohne Titel'); ?>">
                                                             <i class="bi bi-trash"></i>
                                                         </button>
                                                     </td>
@@ -499,7 +533,128 @@ require_once TEMPLATE_PATH . '/header.php';
         </div>
     </div>
 
+    <!-- Edit Meme Modal -->
+    <div class="modal fade" id="editMemeModal" tabindex="-1" aria-labelledby="editMemeModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editMemeModalLabel">
+                        <i class="bi bi-pencil"></i> Meme bearbeiten
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="POST" action="dashboard/edit_handler.php" id="editMemeForm">
+                    <div class="modal-body">
+                        <input type="hidden" name="meme_id" id="edit_meme_id">
+
+                        <div class="mb-3">
+                            <label for="edit_title" class="form-label">Titel</label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="edit_title"
+                                   name="title"
+                                   placeholder="Image-Titel">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="edit_description" class="form-label">Beschreibung</label>
+                            <textarea class="form-control"
+                                      id="edit_description"
+                                      name="description"
+                                      rows="3"
+                                      placeholder="Optionale Beschreibung..."></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="edit_category" class="form-label">Kategorie</label>
+                            <select class="form-select"
+                                    id="edit_category"
+                                    name="category">
+                                <option value="">Keine Kategorie</option>
+                                <option value="Wallpaper">Wallpaper</option>
+                                <option value="Art">Art</option>
+                                <option value="Meme">Meme</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input"
+                                       type="checkbox"
+                                       id="edit_is_public"
+                                       name="is_public"
+                                       value="1">
+                                <label class="form-check-label" for="edit_is_public">
+                                    Öffentlich sichtbar
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle"></i> Abbrechen
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Speichern
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script>
+    // Edit und Delete Funktionalität für Neueste Posts
+    document.addEventListener('DOMContentLoaded', function() {
+        // Edit Button Event Handler
+        const editButtons = document.querySelectorAll('.edit-meme-btn');
+        editButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const memeId = this.dataset.memeId;
+                const title = this.dataset.title;
+                const description = this.dataset.description;
+                const category = this.dataset.category;
+                const isPublic = this.dataset.isPublic === '1';
+
+                // Modal-Felder befüllen
+                document.getElementById('edit_meme_id').value = memeId;
+                document.getElementById('edit_title').value = title;
+                document.getElementById('edit_description').value = description;
+                document.getElementById('edit_category').value = category;
+                document.getElementById('edit_is_public').checked = isPublic;
+
+                // Modal öffnen
+                const modal = new bootstrap.Modal(document.getElementById('editMemeModal'));
+                modal.show();
+            });
+        });
+
+        // Delete Button Event Handler
+        const deleteButtons = document.querySelectorAll('.delete-meme-btn');
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const memeId = this.dataset.memeId;
+                const title = this.dataset.title;
+
+                if (confirm(`Möchten Sie "${title}" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`)) {
+                    // Form erstellen und absenden
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = 'dashboard/delete_handler.php';
+
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'meme_id';
+                    input.value = memeId;
+
+                    form.appendChild(input);
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            });
+        });
+    });
+
     // Sortierung und Filter für Instagram Posts Tabelle
     document.addEventListener('DOMContentLoaded', function() {
         const table = document.getElementById('instagramPostsTable');

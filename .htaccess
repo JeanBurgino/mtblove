@@ -26,6 +26,8 @@ DirectoryIndex index.php
     RewriteRule ^logout$ app/public/logout.php [L]
     RewriteRule ^admin-center$ app/public/dashboard/dashboard.php [L]
     RewriteRule ^dashboard/upload_handler\.php$ app/public/dashboard/upload_handler.php [L]
+    RewriteRule ^dashboard/edit_handler\.php$ app/public/dashboard/edit_handler.php [L]
+    RewriteRule ^dashboard/delete_handler\.php$ app/public/dashboard/delete_handler.php [L]
 </IfModule>
 
 # Sicherheitsheader

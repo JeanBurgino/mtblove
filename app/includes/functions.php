@@ -73,12 +73,13 @@ function validateUpload($file) {
  *
  * @param array $file Das $_FILES Array Element
  * @param string $title Titel des Memes
- * @param string $caption Beschreibung
- * @param string $tags Komma-getrennte Tags
+ * @param string $description Beschreibung
+ * @param string $category Kategorie
  * @param int $user_id User-ID des Uploaders
+ * @param bool $is_public Öffentlich sichtbar (default: true)
  * @return array ['success' => bool, 'message' => string, 'meme_id' => int]
  */
-function saveMeme($file, $title, $caption, $tags, $user_id) {
+function saveMeme($file, $title, $description, $category, $user_id, $is_public = true) {
     global $pdo;
 
     $result = ['success' => false, 'message' => '', 'meme_id' => null];
@@ -101,7 +102,7 @@ function saveMeme($file, $title, $caption, $tags, $user_id) {
     }
 
     $target_path = $upload_dir . '/' . $unique_name;
-    $relative_path = '/app/public/memes/uploads/' . $unique_name;
+    $relative_path = '/memes/uploads/' . $unique_name; // Pfad relativ zu BASE_URL
 
     // Datei verschieben
     if (!move_uploaded_file($file['tmp_name'], $target_path)) {
@@ -115,21 +116,17 @@ function saveMeme($file, $title, $caption, $tags, $user_id) {
     // In Datenbank speichern
     try {
         $stmt = $pdo->prepare("
-            INSERT INTO memes (user_id, title, caption, file_path, file_name, file_size, file_type, width, height, tags)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO memes (title, image_url, description, category, created_by, is_public)
+            VALUES (?, ?, ?, ?, ?, ?)
         ");
 
         $stmt->execute([
-            $user_id,
             $title,
-            $caption,
             $relative_path,
-            $unique_name,
-            $file_info['size'],
-            $file_info['mime_type'],
-            $file_info['width'],
-            $file_info['height'],
-            $tags
+            $description,
+            $category,
+            $user_id,
+            $is_public ? 1 : 0
         ]);
 
         $meme_id = $pdo->lastInsertId();

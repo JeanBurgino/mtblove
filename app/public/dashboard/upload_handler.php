@@ -19,8 +19,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Formular-Daten abrufen
     $title = trim($_POST['title'] ?? '');
-    $caption = trim($_POST['caption'] ?? '');
-    $tags = trim($_POST['tags'] ?? '');
+    $description = trim($_POST['description'] ?? '');
+    $category = trim($_POST['category'] ?? '');
+    $is_public = isset($_POST['is_public']) ? (bool)$_POST['is_public'] : true;
     $user_id = $_SESSION['user_id'];
 
     // Datei-Upload prüfen
@@ -43,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     } else {
         // Meme speichern mit Hilfsfunktion
-        $result = saveMeme($_FILES['meme_file'], $title, $caption, $tags, $user_id);
+        $result = saveMeme($_FILES['meme_file'], $title, $description, $category, $user_id, $is_public);
         $response = $result;
 
         // Analytics-Event tracken
@@ -52,8 +53,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'meme_id' => $result['meme_id'],
                 'user_id' => $user_id,
                 'has_title' => !empty($title),
-                'has_caption' => !empty($caption),
-                'has_tags' => !empty($tags)
+                'has_description' => !empty($description),
+                'has_category' => !empty($category),
+                'is_public' => $is_public
             ]);
         }
     }

@@ -1,0 +1,64 @@
+# PHP Meme Gallery - .gitignore
+
+# Uploads (hochgeladene Bilder nicht committen)
+app/public/memes/uploads/*
+!app/public/memes/uploads/.gitkeep
+
+# Konfigurationsdateien mit sensiblen Daten
+# config.php sollte eigentlich commited werden, aber bei sensiblen Produktionsdaten:
+# app/config/config.php
+
+# Log-Dateien
+*.log
+logs/
+
+# Cache-Dateien
+cache/
+tmp/
+
+# IDE/Editor-spezifische Dateien
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Composer Dependencies (falls später verwendet)
+/vendor/
+composer.lock
+
+# NPM Dependencies (falls Frontend-Build-Tools hinzugefügt werden)
+node_modules/
+package-lock.json
+
+# Environment-Dateien
+.env
+.env.local
+.env.production
+
+# Backups
+*.sql.backup
+*.sql.gz
+backup/
+
+# Thumbnails (falls später generiert)
+app/public/memes/uploads/thumb_*
+
+# Session-Dateien
+sessions/
+
+# Temporary files
+*.tmp
+*.temp
+
+# OS-spezifische Dateien
+Thumbs.db
+Desktop.ini
+
+# PHPUnit
+phpunit.xml
+.phpunit.result.cache
+
+# Coverage reports
+coverage/

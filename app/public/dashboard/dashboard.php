@@ -46,6 +46,10 @@ try {
     $stmt = $pdo->query("SELECT * FROM top_instagram_posts LIMIT 5");
     $top_ig_posts = $stmt->fetchAll();
 
+    // Alle Instagram Posts für Tab 2 abrufen
+    $stmt = $pdo->query("SELECT * FROM instagram_posts ORDER BY post_date DESC");
+    $all_instagram_posts = $stmt->fetchAll();
+
 } catch (PDOException $e) {
     error_log('Dashboard stats error: ' . $e->getMessage());
     $stats = [
@@ -59,6 +63,7 @@ try {
     ];
     $recent_memes = [];
     $top_ig_posts = [];
+    $all_instagram_posts = [];
 }
 
 // Upload-Ergebnis aus Session abrufen (nach Redirect vom upload_handler)
@@ -206,147 +211,283 @@ require_once TEMPLATE_PATH . '/header.php';
     <style>
         .text-instagram { color: #E4405F; }
         .border-instagram { border: 2px solid #E4405F; }
+        .nav-tabs .nav-link.active {
+            background-color: #0d6efd;
+            color: white;
+        }
+        .filter-input {
+            font-size: 0.875rem;
+            padding: 0.25rem 0.5rem;
+        }
+        .sortable-header {
+            cursor: pointer;
+            user-select: none;
+        }
+        .sortable-header:hover {
+            background-color: #f8f9fa;
+        }
+        .sort-icon {
+            opacity: 0.3;
+            font-size: 0.75rem;
+            margin-left: 0.25rem;
+        }
+        .sortable-header.sorted .sort-icon {
+            opacity: 1;
+        }
     </style>
 
-    <div class="row">
-        <!-- Meme Upload Form -->
-        <div class="col-lg-4 mb-4">
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">
-                        <i class="bi bi-cloud-upload"></i> Neues Meme hochladen
-                    </h5>
+    <!-- Tab Navigation -->
+    <ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload" type="button" role="tab" aria-controls="upload" aria-selected="true">
+                <i class="bi bi-cloud-upload"></i> Image Upload
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="posts-tab" data-bs-toggle="tab" data-bs-target="#posts" type="button" role="tab" aria-controls="posts" aria-selected="false">
+                <i class="bi bi-instagram"></i> Instagram Posts
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="adminTabsContent">
+        <!-- Tab 1: Image Upload -->
+        <div class="tab-pane fade show active" id="upload" role="tabpanel" aria-labelledby="upload-tab">
+            <div class="row">
+                <!-- Image Upload Form -->
+                <div class="col-lg-4 mb-4">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-cloud-upload"></i> Neues Image hochladen
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <?php if ($upload_result): ?>
+                                <div class="alert alert-<?php echo $upload_result['success'] ? 'success' : 'danger'; ?>" role="alert">
+                                    <i class="bi bi-<?php echo $upload_result['success'] ? 'check-circle' : 'exclamation-triangle'; ?>"></i>
+                                    <?php echo htmlspecialchars($upload_result['message']); ?>
+                                </div>
+                            <?php endif; ?>
+
+                            <form method="POST" enctype="multipart/form-data" action="upload_handler.php">
+                                <div class="mb-3">
+                                    <label for="meme_file" class="form-label">Bild auswählen</label>
+                                    <input type="file"
+                                           class="form-control"
+                                           id="meme_file"
+                                           name="meme_file"
+                                           accept="image/*"
+                                           required>
+                                    <small class="text-muted">Max. 5MB (JPG, PNG, GIF, WebP)</small>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="title" class="form-label">Titel</label>
+                                    <input type="text"
+                                           class="form-control"
+                                           id="title"
+                                           name="title"
+                                           placeholder="Image-Titel">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="description" class="form-label">Beschreibung</label>
+                                    <textarea class="form-control"
+                                              id="description"
+                                              name="description"
+                                              rows="3"
+                                              placeholder="Optionale Beschreibung..."></textarea>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="category" class="form-label">Kategorie</label>
+                                    <select class="form-select"
+                                            id="category"
+                                            name="category">
+                                        <option value="">Keine Kategorie</option>
+                                        <option value="Wallpaper">Wallpaper</option>
+                                        <option value="Art">Art</option>
+                                        <option value="Meme">Meme</option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input"
+                                               type="checkbox"
+                                               id="is_public"
+                                               name="is_public"
+                                               value="1"
+                                               checked>
+                                        <label class="form-check-label" for="is_public">
+                                            Öffentlich sichtbar
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-upload"></i> Hochladen
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <?php if ($upload_result): ?>
-                        <div class="alert alert-<?php echo $upload_result['success'] ? 'success' : 'danger'; ?>" role="alert">
-                            <i class="bi bi-<?php echo $upload_result['success'] ? 'check-circle' : 'exclamation-triangle'; ?>"></i>
-                            <?php echo htmlspecialchars($upload_result['message']); ?>
-                        </div>
-                    <?php endif; ?>
 
-                    <form method="POST" enctype="multipart/form-data" action="upload_handler.php">
-                        <div class="mb-3">
-                            <label for="meme_file" class="form-label">Bild auswählen</label>
-                            <input type="file"
-                                   class="form-control"
-                                   id="meme_file"
-                                   name="meme_file"
-                                   accept="image/*"
-                                   required>
-                            <small class="text-muted">Max. 5MB (JPG, PNG, GIF, WebP)</small>
+                <!-- Neueste Images Liste -->
+                <div class="col-lg-8 mb-4">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-clock-history"></i> Neueste Posts
+                            </h5>
                         </div>
-
-                        <div class="mb-3">
-                            <label for="title" class="form-label">Titel</label>
-                            <input type="text"
-                                   class="form-control"
-                                   id="title"
-                                   name="title"
-                                   placeholder="Lustiger Meme-Titel">
+                        <div class="card-body">
+                            <?php if (empty($recent_memes)): ?>
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle"></i> Noch keine Images vorhanden. Lade dein erstes Image hoch!
+                                </div>
+                            <?php else: ?>
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Vorschau</th>
+                                                <th>Titel</th>
+                                                <th>Hochgeladen</th>
+                                                <th>Aktionen</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php foreach ($recent_memes as $meme): ?>
+                                                <tr>
+                                                    <td>
+                                                        <img src="<?php echo htmlspecialchars($meme['image_url']); ?>"
+                                                             alt="Image"
+                                                             class="img-thumbnail"
+                                                             style="width: 50px; height: 50px; object-fit: cover;">
+                                                    </td>
+                                                    <td>
+                                                        <?php echo htmlspecialchars($meme['title'] ?? 'Ohne Titel'); ?>
+                                                        <?php if (!$meme['is_public']): ?>
+                                                            <span class="badge bg-warning text-dark ms-1">Privat</span>
+                                                        <?php endif; ?>
+                                                    </td>
+                                                    <td>
+                                                        <small class="text-muted">
+                                                            <?php echo date('d.m.Y H:i', strtotime($meme['created_at'])); ?>
+                                                        </small>
+                                                    </td>
+                                                    <td>
+                                                        <button class="btn btn-sm btn-outline-primary" title="Bearbeiten">
+                                                            <i class="bi bi-pencil"></i>
+                                                        </button>
+                                                        <button class="btn btn-sm btn-outline-danger" title="Löschen">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            <?php endif; ?>
                         </div>
-
-                        <div class="mb-3">
-                            <label for="description" class="form-label">Beschreibung</label>
-                            <textarea class="form-control"
-                                      id="description"
-                                      name="description"
-                                      rows="3"
-                                      placeholder="Optionale Beschreibung..."></textarea>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="category" class="form-label">Kategorie</label>
-                            <select class="form-select"
-                                    id="category"
-                                    name="category">
-                                <option value="">Keine Kategorie</option>
-                                <option value="Lustig">Lustig</option>
-                                <option value="Witzig">Witzig</option>
-                                <option value="Motivation">Motivation</option>
-                                <option value="Relatable">Relatable</option>
-                                <option value="Trending">Trending</option>
-                                <option value="Intern">Intern</option>
-                            </select>
-                        </div>
-
-                        <div class="mb-3">
-                            <div class="form-check">
-                                <input class="form-check-input"
-                                       type="checkbox"
-                                       id="is_public"
-                                       name="is_public"
-                                       value="1"
-                                       checked>
-                                <label class="form-check-label" for="is_public">
-                                    Öffentlich sichtbar
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-upload"></i> Hochladen
-                            </button>
-                        </div>
-                    </form>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Neueste Memes Liste -->
-        <div class="col-lg-8 mb-4">
+        <!-- Tab 2: Instagram Posts -->
+        <div class="tab-pane fade" id="posts" role="tabpanel" aria-labelledby="posts-tab">
             <div class="card shadow-sm">
-                <div class="card-header bg-secondary text-white">
+                <div class="card-header bg-instagram text-white">
                     <h5 class="mb-0">
-                        <i class="bi bi-clock-history"></i> Neueste Memes
+                        <i class="bi bi-instagram"></i> Neueste Posts
                     </h5>
                 </div>
                 <div class="card-body">
-                    <?php if (empty($recent_memes)): ?>
+                    <?php if (empty($all_instagram_posts)): ?>
                         <div class="alert alert-info">
-                            <i class="bi bi-info-circle"></i> Noch keine Memes vorhanden. Lade dein erstes Meme hoch!
+                            <i class="bi bi-info-circle"></i> Noch keine Instagram Posts vorhanden.
                         </div>
                     <?php else: ?>
                         <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
+                            <table class="table table-hover table-striped" id="instagramPostsTable">
+                                <thead class="table-light">
                                     <tr>
-                                        <th>Vorschau</th>
-                                        <th>Titel</th>
-                                        <th>Hochgeladen</th>
-                                        <th>Aktionen</th>
+                                        <th class="sortable-header" data-column="id">
+                                            ID<span class="sort-icon">▲</span>
+                                            <input type="text" class="form-control filter-input mt-1" placeholder="Filter..." data-column="id">
+                                        </th>
+                                        <th class="sortable-header" data-column="ig_post_id">
+                                            Post ID<span class="sort-icon">▲</span>
+                                            <input type="text" class="form-control filter-input mt-1" placeholder="Filter..." data-column="ig_post_id">
+                                        </th>
+                                        <th class="sortable-header" data-column="caption">
+                                            Caption<span class="sort-icon">▲</span>
+                                            <input type="text" class="form-control filter-input mt-1" placeholder="Filter..." data-column="caption">
+                                        </th>
+                                        <th class="sortable-header" data-column="hashtags">
+                                            Hashtags<span class="sort-icon">▲</span>
+                                            <input type="text" class="form-control filter-input mt-1" placeholder="Filter..." data-column="hashtags">
+                                        </th>
+                                        <th class="sortable-header" data-column="post_date">
+                                            Post Datum<span class="sort-icon">▲</span>
+                                            <input type="text" class="form-control filter-input mt-1" placeholder="Filter..." data-column="post_date">
+                                        </th>
+                                        <th class="sortable-header" data-column="views">
+                                            Views<span class="sort-icon">▲</span>
+                                            <input type="text" class="form-control filter-input mt-1" placeholder="Filter..." data-column="views">
+                                        </th>
+                                        <th class="sortable-header" data-column="likes">
+                                            Likes<span class="sort-icon">▲</span>
+                                            <input type="text" class="form-control filter-input mt-1" placeholder="Filter..." data-column="likes">
+                                        </th>
+                                        <th class="sortable-header" data-column="comments">
+                                            Comments<span class="sort-icon">▲</span>
+                                            <input type="text" class="form-control filter-input mt-1" placeholder="Filter..." data-column="comments">
+                                        </th>
+                                        <th class="sortable-header" data-column="shares">
+                                            Shares<span class="sort-icon">▲</span>
+                                            <input type="text" class="form-control filter-input mt-1" placeholder="Filter..." data-column="shares">
+                                        </th>
+                                        <th class="sortable-header" data-column="saves">
+                                            Saves<span class="sort-icon">▲</span>
+                                            <input type="text" class="form-control filter-input mt-1" placeholder="Filter..." data-column="saves">
+                                        </th>
+                                        <th class="sortable-header" data-column="engagement_rate">
+                                            Engagement %<span class="sort-icon">▲</span>
+                                            <input type="text" class="form-control filter-input mt-1" placeholder="Filter..." data-column="engagement_rate">
+                                        </th>
+                                        <th class="sortable-header" data-column="imported_at">
+                                            Importiert<span class="sort-icon">▲</span>
+                                            <input type="text" class="form-control filter-input mt-1" placeholder="Filter..." data-column="imported_at">
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php foreach ($recent_memes as $meme): ?>
+                                    <?php foreach ($all_instagram_posts as $post): ?>
                                         <tr>
-                                            <td>
-                                                <img src="<?php echo htmlspecialchars($meme['image_url']); ?>"
-                                                     alt="Meme"
-                                                     class="img-thumbnail"
-                                                     style="width: 50px; height: 50px; object-fit: cover;">
+                                            <td><?php echo htmlspecialchars($post['id']); ?></td>
+                                            <td><?php echo htmlspecialchars($post['ig_post_id']); ?></td>
+                                            <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<?php echo htmlspecialchars($post['caption']); ?>">
+                                                <?php echo htmlspecialchars($post['caption']); ?>
                                             </td>
-                                            <td>
-                                                <?php echo htmlspecialchars($meme['title'] ?? 'Ohne Titel'); ?>
-                                                <?php if (!$meme['is_public']): ?>
-                                                    <span class="badge bg-warning text-dark ms-1">Privat</span>
-                                                <?php endif; ?>
+                                            <td style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<?php echo htmlspecialchars($post['hashtags']); ?>">
+                                                <?php echo htmlspecialchars($post['hashtags']); ?>
                                             </td>
-                                            <td>
-                                                <small class="text-muted">
-                                                    <?php echo date('d.m.Y H:i', strtotime($meme['created_at'])); ?>
-                                                </small>
-                                            </td>
-                                            <td>
-                                                <button class="btn btn-sm btn-outline-primary" title="Bearbeiten">
-                                                    <i class="bi bi-pencil"></i>
-                                                </button>
-                                                <button class="btn btn-sm btn-outline-danger" title="Löschen">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-                                                <!-- TODO: Edit/Delete-Funktionen implementieren -->
-                                            </td>
+                                            <td><?php echo date('d.m.Y H:i', strtotime($post['post_date'])); ?></td>
+                                            <td><?php echo number_format($post['views']); ?></td>
+                                            <td><?php echo number_format($post['likes']); ?></td>
+                                            <td><?php echo number_format($post['comments']); ?></td>
+                                            <td><?php echo number_format($post['shares']); ?></td>
+                                            <td><?php echo number_format($post['saves']); ?></td>
+                                            <td><?php echo number_format($post['engagement_rate'], 2); ?>%</td>
+                                            <td><?php echo date('d.m.Y H:i', strtotime($post['imported_at'])); ?></td>
                                         </tr>
                                     <?php endforeach; ?>
                                 </tbody>
@@ -355,12 +496,114 @@ require_once TEMPLATE_PATH . '/header.php';
                     <?php endif; ?>
                 </div>
             </div>
-
-            <!-- TODO: Analytics-Dashboard mit Charts hinzufügen -->
-            <!-- TODO: Moderations-Tools für Kommentare/Reports -->
-            <!-- TODO: Bulk-Upload-Funktion -->
         </div>
     </div>
+
+    <script>
+    // Sortierung und Filter für Instagram Posts Tabelle
+    document.addEventListener('DOMContentLoaded', function() {
+        const table = document.getElementById('instagramPostsTable');
+        if (!table) return;
+
+        const tbody = table.querySelector('tbody');
+        const headers = table.querySelectorAll('.sortable-header');
+        const filterInputs = table.querySelectorAll('.filter-input');
+
+        let sortColumn = null;
+        let sortDirection = 'asc';
+        let originalRows = Array.from(tbody.querySelectorAll('tr'));
+
+        // Sortierung
+        headers.forEach(header => {
+            header.addEventListener('click', function(e) {
+                if (e.target.classList.contains('filter-input')) return;
+
+                const column = this.dataset.column;
+                const columnIndex = Array.from(this.parentElement.children).indexOf(this);
+
+                // Toggle sort direction
+                if (sortColumn === column) {
+                    sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+                } else {
+                    sortColumn = column;
+                    sortDirection = 'asc';
+                }
+
+                // Update visual indicators
+                headers.forEach(h => {
+                    h.classList.remove('sorted');
+                    h.querySelector('.sort-icon').textContent = '▲';
+                });
+                this.classList.add('sorted');
+                this.querySelector('.sort-icon').textContent = sortDirection === 'asc' ? '▲' : '▼';
+
+                // Sort rows
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+                rows.sort((a, b) => {
+                    let aVal = a.children[columnIndex].textContent.trim();
+                    let bVal = b.children[columnIndex].textContent.trim();
+
+                    // Try to parse as number
+                    const aNum = parseFloat(aVal.replace(/[^0-9.-]/g, ''));
+                    const bNum = parseFloat(bVal.replace(/[^0-9.-]/g, ''));
+
+                    if (!isNaN(aNum) && !isNaN(bNum)) {
+                        return sortDirection === 'asc' ? aNum - bNum : bNum - aNum;
+                    }
+
+                    // String comparison
+                    return sortDirection === 'asc' ?
+                        aVal.localeCompare(bVal) :
+                        bVal.localeCompare(aVal);
+                });
+
+                // Rebuild tbody
+                tbody.innerHTML = '';
+                rows.forEach(row => tbody.appendChild(row));
+            });
+        });
+
+        // Filter
+        filterInputs.forEach(input => {
+            input.addEventListener('input', function() {
+                const filters = {};
+                filterInputs.forEach(inp => {
+                    const col = inp.dataset.column;
+                    const val = inp.value.toLowerCase().trim();
+                    if (val) filters[col] = val;
+                });
+
+                originalRows.forEach(row => {
+                    let show = true;
+                    const cells = row.querySelectorAll('td');
+
+                    Object.keys(filters).forEach(col => {
+                        const columnIndex = Array.from(headers).findIndex(h => h.dataset.column === col);
+                        if (columnIndex !== -1) {
+                            const cellText = cells[columnIndex].textContent.toLowerCase();
+                            if (!cellText.includes(filters[col])) {
+                                show = false;
+                            }
+                        }
+                    });
+
+                    row.style.display = show ? '' : 'none';
+                });
+            });
+
+            // Prevent sorting when clicking on filter input
+            input.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+        });
+    });
+    </script>
+
+    <style>
+        .bg-instagram {
+            background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+        }
+    </style>
 </div>
 
 <?php require_once TEMPLATE_PATH . '/footer.php'; ?>

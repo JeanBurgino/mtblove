@@ -1,0 +1,37 @@
+# Apache-Konfiguration für Meme-Gallery
+
+# Aktiviere Rewrite Engine
+RewriteEngine On
+
+# Basis-URL für Rewrites
+RewriteBase /mtblove
+
+# Verhindere direkten Zugriff auf config-Dateien
+<FilesMatch "^(config\.php)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Schütze .git Verzeichnis
+<DirectoryMatch "\.git">
+    Order allow,deny
+    Deny from all
+</DirectoryMatch>
+
+# Sicherheitsheader
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+</IfModule>
+
+# PHP-Einstellungen
+<IfModule mod_php7.c>
+    php_value upload_max_filesize 5M
+    php_value post_max_size 5M
+    php_value max_execution_time 300
+</IfModule>
+
+# Fehlerseiten (später anpassen)
+# ErrorDocument 404 /mtblove/app/public/404.php
+# ErrorDocument 500 /mtblove/app/public/500.php

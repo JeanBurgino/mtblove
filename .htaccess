@@ -22,6 +22,7 @@ DirectoryIndex index.php
     RewriteRule ^login$ app/public/login.php [L]
     RewriteRule ^logout$ app/public/logout.php [L]
     RewriteRule ^admin-center$ app/public/dashboard/dashboard.php [L]
+    RewriteRule ^dashboard/upload_handler\.php$ app/public/dashboard/upload_handler.php [L]
 </IfModule>
 
 # Sicherheitsheader

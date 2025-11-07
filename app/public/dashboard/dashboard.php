@@ -271,7 +271,7 @@ require_once TEMPLATE_PATH . '/header.php';
                                 </div>
                             <?php endif; ?>
 
-                            <form method="POST" enctype="multipart/form-data" action="upload_handler.php">
+                            <form method="POST" enctype="multipart/form-data" action="dashboard/upload_handler.php">
                                 <div class="mb-3">
                                     <label for="meme_file" class="form-label">Bild auswählen</label>
                                     <input type="file"

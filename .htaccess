@@ -1,71 +1,31 @@
-# Apache-Konfiguration für mtblove.com
+# Minimale .htaccess für mtblove.com - Plesk Edition
+# Verwende diese Version wenn die normale .htaccess Probleme macht
 
-# Standard-Index-Datei setzen
-DirectoryIndex index.php index.html
+# Standard-Index
+DirectoryIndex index.php
 
-# Aktiviere Rewrite Engine
-RewriteEngine On
-
-# Basis-URL für Rewrites (Root für mtblove.com)
-RewriteBase /
-
-# Force HTTPS (in Produktion)
-# RewriteCond %{HTTPS} off
-# RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
-
-# Verhindere direkten Zugriff auf config-Dateien
-<FilesMatch "^(config\.php)$">
+# Verhindere Zugriff auf sensible Dateien
+<FilesMatch "^(config\.php|\.git)">
     Require all denied
 </FilesMatch>
 
-# Schütze sensible Verzeichnisse
-<DirectoryMatch "(\.git|app/config|app/includes)">
-    Require all denied
-</DirectoryMatch>
+# Nur Rewrite wenn mod_rewrite verfügbar
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
 
-# Wenn die angeforderte Datei oder das Verzeichnis existiert, direkt ausliefern
-RewriteCond %{REQUEST_FILENAME} -f [OR]
-RewriteCond %{REQUEST_FILENAME} -d
-RewriteRule ^ - [L]
+    # Existierende Dateien nicht umschreiben
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^ - [L]
 
-# Clean URLs - Route Mapping
-# /login -> app/public/login.php
-RewriteRule ^login$ app/public/login.php [L]
-
-# /logout -> app/public/logout.php
-RewriteRule ^logout$ app/public/logout.php [L]
-
-# /admin-center -> app/public/dashboard/dashboard.php
-RewriteRule ^admin-center$ app/public/dashboard/dashboard.php [L]
-
-# /memes -> Statisches Verzeichnis für Uploads
-RewriteRule ^memes/(.*)$ app/public/memes/$1 [L]
+    # Clean URLs (optional - kann auskommentiert werden)
+    RewriteRule ^login$ app/public/login.php [L]
+    RewriteRule ^logout$ app/public/logout.php [L]
+    RewriteRule ^admin-center$ app/public/dashboard/dashboard.php [L]
+</IfModule>
 
 # Sicherheitsheader
 <IfModule mod_headers.c>
     Header set X-Content-Type-Options "nosniff"
     Header set X-Frame-Options "SAMEORIGIN"
-    Header set X-XSS-Protection "1; mode=block"
-    # Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' cdn.jsdelivr.net; img-src 'self' data: *;"
-</IfModule>
-
-# PHP-Einstellungen (für mod_php - funktioniert nicht mit PHP-FPM)
-# Wenn PHP-FPM verwendet wird, Einstellungen in php.ini anpassen
-<IfModule mod_php.c>
-    php_value upload_max_filesize 5M
-    php_value post_max_size 5M
-    php_value max_execution_time 300
-</IfModule>
-
-# Fehlerseiten (später anpassen)
-# ErrorDocument 404 /404.php
-# ErrorDocument 500 /500.php
-
-# Cache-Control für statische Assets
-<IfModule mod_expires.c>
-    ExpiresActive On
-    ExpiresByType image/jpeg "access plus 1 year"
-    ExpiresByType image/png "access plus 1 year"
-    ExpiresByType image/gif "access plus 1 year"
-    ExpiresByType image/webp "access plus 1 year"
 </IfModule>

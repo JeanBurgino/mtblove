@@ -1,0 +1,24 @@
+# Minimal .htaccess für Debugging
+# Kopiere diese Datei zu .htaccess wenn die normale Version Probleme macht:
+# cp .htaccess.minimal .htaccess
+
+RewriteEngine On
+RewriteBase /
+
+# Verhindere direkten Zugriff auf config-Dateien
+<FilesMatch "^(config\.php)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Schütze sensible Verzeichnisse
+<DirectoryMatch "\.git|app/config|app/includes">
+    Order allow,deny
+    Deny from all
+</DirectoryMatch>
+
+# Sicherheitsheader
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+</IfModule>

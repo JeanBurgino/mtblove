@@ -22,11 +22,13 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(255) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     role ENUM('admin', 'editor', 'viewer') DEFAULT 'viewer',
+    active TINYINT(1) DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     last_login DATETIME NULL,
     INDEX idx_email (email),
     INDEX idx_username (username),
-    INDEX idx_role (role)
+    INDEX idx_role (role),
+    INDEX idx_active (active)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
@@ -81,11 +83,11 @@ CREATE TABLE IF NOT EXISTS instagram_posts (
 -- Demo-Benutzer erstellen
 -- Passwort: admin123 (Hash generiert mit password_hash('admin123', PASSWORD_DEFAULT))
 -- WICHTIG: In Produktion löschen oder Passwort ändern!
-INSERT INTO users (username, email, password_hash, role, created_at) VALUES
-('admin', 'admin@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', NOW()),
-('editor', 'editor@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'editor', NOW()),
-('viewer', 'viewer@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'viewer', NOW())
-ON DUPLICATE KEY UPDATE id=id;
+INSERT INTO users (username, email, password_hash, role, active, created_at) VALUES
+('admin', 'admin@example.com', '$2y$12$2NXMAG9LpnCMWxr7s/moxe7HOJjzil3r1OPywZL3vTZNZ0UCIiHTC', 'admin', 1, NOW()),
+('editor', 'editor@example.com', '$2y$12$2NXMAG9LpnCMWxr7s/moxe7HOJjzil3r1OPywZL3vTZNZ0UCIiHTC', 'editor', 1, NOW()),
+('viewer', 'viewer@example.com', '$2y$12$2NXMAG9LpnCMWxr7s/moxe7HOJjzil3r1OPywZL3vTZNZ0UCIiHTC', 'viewer', 1, NOW())
+ON DUPLICATE KEY UPDATE password_hash=VALUES(password_hash), active=VALUES(active);
 
 -- Demo-Memes einfügen (optional - für Tests)
 INSERT INTO memes (title, image_url, description, category, created_by, is_public) VALUES

@@ -1,10 +1,14 @@
-# Apache-Konfiguration für Meme-Gallery
+# Apache-Konfiguration für mtblove.com
 
 # Aktiviere Rewrite Engine
 RewriteEngine On
 
-# Basis-URL für Rewrites
-RewriteBase /mtblove
+# Basis-URL für Rewrites (Root für mtblove.com)
+RewriteBase /
+
+# Force HTTPS (in Produktion)
+# RewriteCond %{HTTPS} off
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
 
 # Verhindere direkten Zugriff auf config-Dateien
 <FilesMatch "^(config\.php)$">
@@ -12,17 +16,31 @@ RewriteBase /mtblove
     Deny from all
 </FilesMatch>
 
-# Schütze .git Verzeichnis
-<DirectoryMatch "\.git">
+# Schütze sensible Verzeichnisse
+<DirectoryMatch "\.git|app/config|app/includes">
     Order allow,deny
     Deny from all
 </DirectoryMatch>
+
+# Clean URLs - Route Mapping
+# /login -> app/public/login.php
+RewriteRule ^login$ app/public/login.php [L]
+
+# /logout -> app/public/logout.php
+RewriteRule ^logout$ app/public/logout.php [L]
+
+# /admin-center -> app/public/dashboard/dashboard.php
+RewriteRule ^admin-center$ app/public/dashboard/dashboard.php [L]
+
+# /memes -> Statisches Verzeichnis für Uploads
+RewriteRule ^memes/(.*)$ app/public/memes/$1 [L]
 
 # Sicherheitsheader
 <IfModule mod_headers.c>
     Header set X-Content-Type-Options "nosniff"
     Header set X-Frame-Options "SAMEORIGIN"
     Header set X-XSS-Protection "1; mode=block"
+    # Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' cdn.jsdelivr.net; img-src 'self' data: *;"
 </IfModule>
 
 # PHP-Einstellungen
@@ -33,5 +51,14 @@ RewriteBase /mtblove
 </IfModule>
 
 # Fehlerseiten (später anpassen)
-# ErrorDocument 404 /mtblove/app/public/404.php
-# ErrorDocument 500 /mtblove/app/public/500.php
+# ErrorDocument 404 /404.php
+# ErrorDocument 500 /500.php
+
+# Cache-Control für statische Assets
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/gif "access plus 1 year"
+    ExpiresByType image/webp "access plus 1 year"
+</IfModule>

@@ -1,6 +1,8 @@
-# Meme Gallery - PHP Web Application
+# mtblove.com - Meme Gallery & Instagram Analytics
 
-Eine moderne, responsive Web-Anwendung zur Verwaltung und Anzeige von Memes, entwickelt mit PHP und MySQL.
+Eine moderne, responsive Web-Anwendung zur Verwaltung und Anzeige von Memes mit Instagram Posts Analytics Dashboard, entwickelt mit PHP und MySQL.
+
+**Live URL:** https://mtblove.com
 
 ## Features
 
@@ -12,15 +14,16 @@ Eine moderne, responsive Web-Anwendung zur Verwaltung und Anzeige von Memes, ent
 - Pagination für große Gallerien
 - Mobile-optimiert mit Bootstrap 5
 
-### Interner Bereich (Login erforderlich)
-- Admin-Dashboard mit Statistiken
-- Meme-Upload mit Drag & Drop
+### Interner Bereich - Admin Center (Login erforderlich)
+- Instagram Posts Analytics Dashboard
+- Meme-Upload mit Validierung
 - Titel, Caption und Tags hinzufügen
 - Meme-Verwaltung (Bearbeiten/Löschen)
 - Benutzer-Verwaltung
-- Analytics-Dashboard (in Planung)
+- Statistiken und Analytics (in Planung)
 
 ### Technische Features
+- **Clean URLs** mit mod_rewrite
 - Sichere Session-basierte Authentifizierung
 - Password-Hashing mit PHP `password_hash()`
 - SQL-Injection-Schutz mit Prepared Statements
@@ -28,6 +31,17 @@ Eine moderne, responsive Web-Anwendung zur Verwaltung und Anzeige von Memes, ent
 - File-Upload-Validierung
 - MIME-Type-Überprüfung
 - Responsive Design (Mobile & Desktop)
+- HTTPS-Ready
+
+## URL-Struktur
+
+Die Anwendung verwendet Clean URLs für eine bessere Benutzererfahrung:
+
+- `https://mtblove.com/` - Startseite (Meme Gallery)
+- `https://mtblove.com/login` - Login-Seite
+- `https://mtblove.com/admin-center` - Admin Center (Instagram Analytics Dashboard)
+- `https://mtblove.com/logout` - Logout
+- `https://mtblove.com/memes/uploads/` - Meme-Uploads (statische Dateien)
 
 ## Systemvoraussetzungen
 
@@ -72,8 +86,17 @@ define('DB_USER', 'root');         // Anpassen!
 define('DB_PASS', '');             // Anpassen!
 
 // Base URL anpassen
-define('BASE_URL', 'http://localhost/mtblove');
+// Für Produktion:
+define('BASE_URL', 'https://mtblove.com');
+
+// Für lokale Entwicklung:
+// define('BASE_URL', 'http://localhost/mtblove');
 ```
+
+**Für lokale Entwicklung:**
+- Kopiere `app/config/config_local.example.php` zu `app/config/config_local.php`
+- Passe die Werte für lokale Entwicklung an
+- Ändere in `.htaccess` die `RewriteBase` von `/` zu `/mtblove` für localhost
 
 ### 4. Berechtigungen setzen
 

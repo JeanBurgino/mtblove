@@ -28,5 +28,5 @@ session_start();
 $_SESSION['logout_message'] = 'Sie wurden erfolgreich abgemeldet.';
 
 // Zur Startseite weiterleiten
-redirect(BASE_URL . '/app/public/index.php');
+redirect(BASE_URL);
 ?>

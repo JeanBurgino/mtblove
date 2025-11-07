@@ -73,5 +73,5 @@ if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
 
 // Normale Form-Submission: Redirect mit Session-Message
 $_SESSION['upload_result'] = $response;
-redirect(BASE_URL . '/app/public/dashboard/dashboard.php');
+redirect(BASE_URL . '/admin-center');
 ?>

@@ -8,9 +8,9 @@
 
 require_once '../config/config.php';
 
-// Wenn bereits eingeloggt, zum Dashboard weiterleiten
+// Wenn bereits eingeloggt, zum Admin Center weiterleiten
 if (isLoggedIn()) {
-    redirect(BASE_URL . '/app/public/dashboard/dashboard.php');
+    redirect(BASE_URL . '/admin-center');
 }
 
 $error = '';
@@ -46,8 +46,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // $stmt = $pdo->prepare("UPDATE users SET last_login = NOW() WHERE id = ?");
                 // $stmt->execute([$user['id']]);
 
-                // Weiterleitung zum Dashboard
-                redirect(BASE_URL . '/app/public/dashboard/dashboard.php');
+                // Weiterleitung zum Admin Center
+                redirect(BASE_URL . '/admin-center');
             } else {
                 $error = 'Ungültige Anmeldedaten.';
 

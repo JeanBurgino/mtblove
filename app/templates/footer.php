@@ -5,13 +5,13 @@
         <div class="container">
             <div class="row">
                 <div class="col-md-6">
-                    <h5><i class="bi bi-emoji-laughing"></i> Meme Gallery</h5>
+                    <h5><i class="bi bi-emoji-laughing"></i> mtblove</h5>
                     <p class="text-muted">Die beste Sammlung der lustigsten Memes</p>
                     <!-- TODO: Social Media Links hier hinzufügen -->
                 </div>
                 <div class="col-md-6 text-md-end">
                     <p class="text-muted mb-1">
-                        &copy; <?php echo date('Y'); ?> Meme Gallery
+                        &copy; <?php echo date('Y'); ?> mtblove.com
                     </p>
                     <p class="text-muted">
                         <?php if (isLoggedIn()): ?>

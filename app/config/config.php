@@ -9,7 +9,7 @@
 // Session-Sicherheitseinstellungen
 ini_set('session.cookie_httponly', 1);
 ini_set('session.use_only_cookies', 1);
-ini_set('session.cookie_secure', 0); // Auf 1 setzen bei HTTPS
+ini_set('session.cookie_secure', 1); // HTTPS aktiviert für mtblove.com
 session_start();
 
 // Zeitzone setzen
@@ -34,8 +34,10 @@ define('TEMPLATE_PATH', APP_PATH . '/templates');
 define('UPLOAD_PATH', PUBLIC_PATH . '/memes/uploads');
 
 // URLs
-define('BASE_URL', 'http://localhost/mtblove');
-define('MEMES_URL', BASE_URL . '/app/public/memes');
+// Für Entwicklung auf localhost: 'http://localhost' oder 'http://localhost/mtblove'
+// Für Produktion: 'https://mtblove.com'
+define('BASE_URL', 'https://mtblove.com');
+define('MEMES_URL', BASE_URL . '/memes');
 
 // Upload-Einstellungen
 define('MAX_FILE_SIZE', 5 * 1024 * 1024); // 5MB
@@ -70,7 +72,7 @@ function isLoggedIn() {
 // Hilfsfunktion für geschützte Seiten
 function requireLogin() {
     if (!isLoggedIn()) {
-        redirect(BASE_URL . '/app/public/login.php');
+        redirect(BASE_URL . '/login');
     }
 }
 

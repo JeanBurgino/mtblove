@@ -1,9 +1,10 @@
 <?php
 /**
- * Dashboard - Interner Bereich für eingeloggte Benutzer
+ * Admin Center - Instagram Posts Analytics Dashboard
  *
+ * Zeigt Analytics und Statistiken für Instagram-Posts
  * Hier können Admins Memes hochladen, bearbeiten und löschen
- * Zeigt Statistiken und ermöglicht Content-Management
+ * TODO: Instagram API Integration für Post-Analytics
  */
 
 require_once '../../config/config.php';
@@ -43,7 +44,7 @@ try {
 $upload_result = $_SESSION['upload_result'] ?? null;
 unset($_SESSION['upload_result']);
 
-$page_title = 'Dashboard';
+$page_title = 'Admin Center - Instagram Analytics';
 require_once TEMPLATE_PATH . '/header.php';
 ?>
 
@@ -52,10 +53,13 @@ require_once TEMPLATE_PATH . '/header.php';
     <div class="row mb-4">
         <div class="col-12">
             <h1 class="display-5">
-                <i class="bi bi-speedometer2"></i> Dashboard
+                <i class="bi bi-instagram"></i> Admin Center
             </h1>
             <p class="lead text-muted">
-                Willkommen zurück, <?php echo htmlspecialchars($_SESSION['username']); ?>!
+                Instagram Posts Analytics Dashboard
+            </p>
+            <p class="text-muted">
+                <small>Eingeloggt als: <?php echo htmlspecialchars($_SESSION['username']); ?></small>
             </p>
         </div>
     </div>

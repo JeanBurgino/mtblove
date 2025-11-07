@@ -14,6 +14,9 @@ DirectoryIndex index.php
     RewriteEngine On
     RewriteBase /
 
+    # Memes/Uploads Verzeichnis umleiten
+    RewriteRule ^memes/uploads/(.+)$ app/public/memes/uploads/$1 [L]
+
     # Existierende Dateien nicht umschreiben
     RewriteCond %{REQUEST_FILENAME} -f
     RewriteRule ^ - [L]

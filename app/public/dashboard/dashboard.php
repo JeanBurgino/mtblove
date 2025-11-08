@@ -439,9 +439,14 @@ require_once TEMPLATE_PATH . '/header.php';
         <div class="tab-pane fade" id="posts" role="tabpanel" aria-labelledby="posts-tab">
             <div class="card shadow-sm">
                 <div class="card-header bg-instagram text-white">
-                    <h5 class="mb-0">
-                        <i class="bi bi-instagram"></i> Neueste Posts
-                    </h5>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="bi bi-instagram"></i> Instagram Posts
+                        </h5>
+                        <button type="button" class="btn btn-light btn-sm" id="importInstagramBtn">
+                            <i class="bi bi-download"></i> Posts importieren
+                        </button>
+                    </div>
                 </div>
                 <div class="card-body">
                     <?php if (empty($all_instagram_posts)): ?>
@@ -751,6 +756,60 @@ require_once TEMPLATE_PATH . '/header.php';
                 e.stopPropagation();
             });
         });
+    });
+
+    // Instagram Import Button Handler
+    document.addEventListener('DOMContentLoaded', function() {
+        const importBtn = document.getElementById('importInstagramBtn');
+        if (importBtn) {
+            importBtn.addEventListener('click', function() {
+                // Button während des Imports deaktivieren
+                const originalText = this.innerHTML;
+                this.disabled = true;
+                this.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Importiere...';
+
+                // AJAX Request zum Import Handler
+                fetch('dashboard/import_instagram_handler.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Erfolgsmeldung oder Fehlermeldung anzeigen
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = `alert alert-${data.success ? 'success' : 'danger'} alert-dismissible fade show`;
+                    alertDiv.innerHTML = `
+                        <i class="bi bi-${data.success ? 'check-circle' : 'exclamation-triangle'}"></i>
+                        ${data.message}
+                        ${data.imported_count ? `<br><small>Importiert: ${data.imported_count} Posts</small>` : ''}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    `;
+
+                    // Alert vor der Tabelle einfügen
+                    const cardBody = document.querySelector('#posts .card-body');
+                    cardBody.insertBefore(alertDiv, cardBody.firstChild);
+
+                    // Button wieder aktivieren
+                    this.disabled = false;
+                    this.innerHTML = originalText;
+
+                    // Bei Erfolg: Seite neu laden um neue Posts anzuzeigen
+                    if (data.success && data.imported_count > 0) {
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000);
+                    }
+                })
+                .catch(error => {
+                    console.error('Import Error:', error);
+                    alert('Fehler beim Import: ' + error.message);
+                    this.disabled = false;
+                    this.innerHTML = originalText;
+                });
+            });
+        }
     });
     </script>
 

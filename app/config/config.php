@@ -93,7 +93,11 @@ function requireLogin() {
 // TODO: Später hier Analytics-Tracking-ID konfigurieren
 // define('ANALYTICS_ID', 'UA-XXXXX-Y');
 
-// TODO: Später hier API-Keys für externe Services hinzufügen
-// define('API_KEY', 'your-api-key');
+// Instagram Graph API Konfiguration
+// WICHTIG: Diese Werte müssen mit echten Credentials gefüllt werden
+// Anleitung: https://developers.facebook.com/docs/instagram-basic-display-api/getting-started
+define('INSTAGRAM_ACCESS_TOKEN', ''); // Instagram Access Token hier eintragen
+define('INSTAGRAM_USER_ID', ''); // Instagram Business Account User ID hier eintragen
+define('INSTAGRAM_API_VERSION', 'v18.0'); // Graph API Version
 
 ?>

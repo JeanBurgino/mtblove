@@ -43,12 +43,12 @@ const Home = () => {
         </p>
 
         <div className="flex gap-4 flex-wrap justify-center">
-          <button
-            onClick={() => navigate('/wallpapers')}
-            className="px-8 py-4 bg-orange hover:bg-orange-light text-white rounded-xl font-bold transition-all hover:scale-105 shadow-[0_0_20px_-5px] shadow-orange"
+          <a
+            href="/wallpapers-standalone.html"
+            className="px-8 py-4 bg-orange hover:bg-orange-light text-white rounded-xl font-bold transition-all hover:scale-105 shadow-[0_0_20px_-5px] shadow-orange inline-block"
           >
             Gallery
-          </button>
+          </a>
           <button
             onClick={() => navigate('/shop')}
             className="px-8 py-4 bg-blue/10 hover:bg-blue/20 border border-blue/50 text-light rounded-xl font-bold transition-all"

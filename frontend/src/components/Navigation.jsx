@@ -27,7 +27,12 @@ const Navigation = () => {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             <NavLink to="/" label="Home" />
-            <NavLink to="/wallpapers" label="Gallery" />
+            <a
+              href="/wallpapers-standalone.html"
+              className="text-sm font-bold uppercase tracking-wide text-light/60 hover:text-white transition-colors"
+            >
+              Gallery
+            </a>
             <NavLink to="/shop" label="Shop" />
 
             <div className="h-6 w-px bg-light/20 mx-2"></div>
@@ -81,7 +86,13 @@ const Navigation = () => {
         <div className="md:hidden bg-dark-800 border-b border-light/10">
           <div className="px-2 pt-2 pb-3 space-y-1">
             <MobileNavLink to="/" label="Home" onClick={() => setIsMenuOpen(false)} />
-            <MobileNavLink to="/wallpapers" label="Gallery" onClick={() => setIsMenuOpen(false)} />
+            <a
+              href="/wallpapers-standalone.html"
+              onClick={() => setIsMenuOpen(false)}
+              className="block px-3 py-3 rounded-lg text-base font-medium text-light hover:bg-blue/20 hover:text-white"
+            >
+              Gallery
+            </a>
             <MobileNavLink to="/shop" label="Shop" onClick={() => setIsMenuOpen(false)} />
             <div className="h-px bg-light/10 my-2"></div>
             {isAuthenticated ? (

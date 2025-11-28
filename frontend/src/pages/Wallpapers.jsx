@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Download, Image as ImageIcon, Heart } from 'lucide-react'
 import axios from 'axios'
+import IconTest from '../components/IconTest'
 
 const Wallpapers = () => {
   const [wallpapers, setWallpapers] = useState([])
@@ -103,6 +104,9 @@ const Wallpapers = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-16">
+      {/* Temporary Icon Test - Remove after verification */}
+      <IconTest />
+
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
         <div>
           <h1 className="text-4xl md:text-5xl font-black italic text-white mb-2">
@@ -245,28 +249,33 @@ const WallpaperCard = ({ wallpaper, isLiked, onDownload, onLike }) => (
         {/* Like Section */}
         <button
           onClick={() => onLike(wallpaper)}
-          className="flex items-center gap-2 group/like transition-all"
+          className="flex items-center gap-2 group/like transition-all hover:opacity-80"
+          title="Like this wallpaper"
         >
           <Heart
             size={20}
+            strokeWidth={2}
             className={`transition-all ${
               isLiked
                 ? 'fill-orange text-orange'
                 : 'text-light/50 group-hover/like:text-orange'
             }`}
+            style={{ minWidth: '20px', minHeight: '20px' }}
           />
           <span className={`text-sm font-bold ${
             isLiked ? 'text-orange' : 'text-light/70'
           }`}>
-            {wallpaper.likes || 0}
+            {wallpaper.likes || 0} Likes
           </span>
         </button>
 
         {/* Download Section */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2" title="Total downloads">
           <Download
             size={20}
+            strokeWidth={2}
             className="text-blue"
+            style={{ minWidth: '20px', minHeight: '20px' }}
           />
           <span className="text-sm font-bold text-light/70">
             {wallpaper.downloads || 0}

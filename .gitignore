@@ -3,7 +3,7 @@ node_modules/
 vendor/
 
 # Build outputs
-frontend/dist/
+# frontend/dist/ - NICHT IGNORIEREN (Shared Hosting braucht gebaute Dateien)
 frontend/build/
 
 # Environment & Config

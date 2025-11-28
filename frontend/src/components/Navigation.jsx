@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Menu, X, Instagram, Facebook, User, LogOut } from 'lucide-react'
+import { Menu, X, Instagram, Facebook, Music2 as TikTok, User, LogOut } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 
 const Navigation = () => {
@@ -27,15 +27,16 @@ const Navigation = () => {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             <NavLink to="/" label="Home" />
-            <NavLink to="/wallpapers" label="Wallpapers" />
+            <NavLink to="/wallpapers" label="Gallery" />
             <NavLink to="/shop" label="Shop" />
 
             <div className="h-6 w-px bg-light/20 mx-2"></div>
 
             {/* Social Links */}
             <div className="flex space-x-3 text-light">
-              <Instagram size={20} className="hover:text-orange cursor-pointer transition-colors" />
               <Facebook size={20} className="hover:text-blue cursor-pointer transition-colors" />
+              <Instagram size={20} className="hover:text-orange cursor-pointer transition-colors" />
+              <TikTok size={20} className="hover:text-light cursor-pointer transition-colors" />
             </div>
 
             {/* Auth Button */}
@@ -80,7 +81,7 @@ const Navigation = () => {
         <div className="md:hidden bg-dark-800 border-b border-light/10">
           <div className="px-2 pt-2 pb-3 space-y-1">
             <MobileNavLink to="/" label="Home" onClick={() => setIsMenuOpen(false)} />
-            <MobileNavLink to="/wallpapers" label="Wallpapers" onClick={() => setIsMenuOpen(false)} />
+            <MobileNavLink to="/wallpapers" label="Gallery" onClick={() => setIsMenuOpen(false)} />
             <MobileNavLink to="/shop" label="Shop" onClick={() => setIsMenuOpen(false)} />
             <div className="h-px bg-light/10 my-2"></div>
             {isAuthenticated ? (
@@ -97,7 +98,7 @@ const Navigation = () => {
                 </button>
               </>
             ) : (
-              <MobileNavLink to="/admin/login" label="Admin Login" onClick={() => setIsMenuOpen(false)} />
+              <MobileNavLink to="/admin/login" label="Login" onClick={() => setIsMenuOpen(false)} />
             )}
           </div>
         </div>

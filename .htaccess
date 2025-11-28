@@ -23,6 +23,9 @@
     RewriteCond %{REQUEST_URI} ^/uploads/
     RewriteRule ^ - [L]
 
+    # Redirect /wallpapers to standalone gallery
+    RewriteRule ^wallpapers/?$ /wallpapers-standalone.html [R=301,L]
+
     # Alle anderen Requests an React Frontend weiterleiten
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d

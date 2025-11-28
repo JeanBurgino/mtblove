@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { Download, Image as ImageIcon, Heart } from 'lucide-react'
+import { Image as ImageIcon } from 'lucide-react'
 import axios from 'axios'
-import IconTest from '../components/IconTest'
 
 const Wallpapers = () => {
   const [wallpapers, setWallpapers] = useState([])
@@ -104,9 +103,6 @@ const Wallpapers = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-16">
-      {/* Temporary Icon Test - Remove after verification */}
-      <IconTest />
-
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
         <div>
           <h1 className="text-4xl md:text-5xl font-black italic text-white mb-2">
@@ -236,7 +232,8 @@ const WallpaperCard = ({ wallpaper, isLiked, onDownload, onLike }) => (
           onClick={() => onDownload(wallpaper)}
           className="bg-orange hover:bg-orange-light text-white px-6 py-3 rounded-full font-bold flex items-center gap-2 transition-all hover:scale-105 shadow-lg shadow-orange/30"
         >
-          <Download size={20} strokeWidth={3} /> Download
+          <span className="text-xl" style={{ lineHeight: 1 }}>⬇️</span>
+          Download
         </button>
       </div>
     </div>
@@ -252,31 +249,24 @@ const WallpaperCard = ({ wallpaper, isLiked, onDownload, onLike }) => (
           className="flex items-center gap-2 group/like transition-all hover:opacity-80"
           title="Like this wallpaper"
         >
-          <Heart
-            size={20}
-            strokeWidth={2}
-            className={`transition-all ${
-              isLiked
-                ? 'fill-orange text-orange'
-                : 'text-light/50 group-hover/like:text-orange'
+          <span
+            className={`text-xl transition-all ${
+              isLiked ? 'scale-110' : 'grayscale group-hover/like:grayscale-0'
             }`}
-            style={{ minWidth: '20px', minHeight: '20px' }}
-          />
+            style={{ lineHeight: 1 }}
+          >
+            {isLiked ? '❤️' : '🤍'}
+          </span>
           <span className={`text-sm font-bold ${
             isLiked ? 'text-orange' : 'text-light/70'
           }`}>
-            {wallpaper.likes || 0} Likes
+            {wallpaper.likes || 0}
           </span>
         </button>
 
         {/* Download Section */}
         <div className="flex items-center gap-2" title="Total downloads">
-          <Download
-            size={20}
-            strokeWidth={2}
-            className="text-blue"
-            style={{ minWidth: '20px', minHeight: '20px' }}
-          />
+          <span className="text-lg" style={{ lineHeight: 1 }}>⬇️</span>
           <span className="text-sm font-bold text-light/70">
             {wallpaper.downloads || 0}
           </span>

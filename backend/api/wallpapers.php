@@ -242,3 +242,43 @@ function incrementDownload() {
         sendError('Download konnte nicht gezählt werden', 500);
     }
 }
+
+/**
+ * Toggle like for a wallpaper
+ */
+function toggleLike() {
+    $id = $_POST['id'] ?? 0;
+    $action = $_POST['liked'] ?? 'true'; // 'true' = add like, 'false' = remove like
+
+    if (!$id) {
+        sendError('ID erforderlich', 400);
+    }
+
+    $pdo = getDBConnection();
+
+    try {
+        if ($action === 'true') {
+            // Increment likes
+            $stmt = $pdo->prepare("UPDATE wallpapers SET likes = likes + 1 WHERE id = :id");
+        } else {
+            // Decrement likes (but not below 0)
+            $stmt = $pdo->prepare("UPDATE wallpapers SET likes = GREATEST(0, likes - 1) WHERE id = :id");
+        }
+
+        $stmt->execute(['id' => $id]);
+
+        // Get updated like count
+        $stmt = $pdo->prepare("SELECT likes FROM wallpapers WHERE id = :id");
+        $stmt->execute(['id' => $id]);
+        $result = $stmt->fetch();
+
+        sendJSON([
+            'success' => true,
+            'likes' => $result['likes'] ?? 0
+        ]);
+
+    } catch (PDOException $e) {
+        error_log('Toggle like error: ' . $e->getMessage());
+        sendError('Like konnte nicht aktualisiert werden', 500);
+    }
+}

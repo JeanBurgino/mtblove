@@ -72,6 +72,11 @@ try {
             incrementDownload();
             break;
 
+        case 'toggle_like':
+            require_once __DIR__ . '/wallpapers.php';
+            toggleLike();
+            break;
+
         // Product Endpoints
         case 'get_products':
             require_once __DIR__ . '/products.php';

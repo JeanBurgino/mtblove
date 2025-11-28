@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wallpaper Gallery - MTB Love</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            DEFAULT: '#0a1016',
+                            700: '#0f1720',
+                            800: '#0d1419',
+                            900: '#020b12',
+                        },
+                        blue: {
+                            DEFAULT: '#0268a8',
+                            dark: '#025a90',
+                        },
+                        orange: {
+                            DEFAULT: '#ed7f20',
+                            light: '#ffb056',
+                        },
+                        light: '#b1dde9',
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            background: #0a1016;
+            color: #b1dde9;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="max-w-7xl mx-auto px-4 py-16">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
+            <div>
+                <h1 class="text-4xl md:text-5xl font-black italic text-white mb-2">
+                    WALLPAPER GALLERY
+                </h1>
+                <p class="text-light/70">
+                    Free and premium wallpapers for your setup
+                </p>
+            </div>
+
+            <!-- Filter Buttons -->
+            <div class="flex gap-2" id="filterButtons"></div>
+        </div>
+
+        <!-- Sort Options -->
+        <div class="flex flex-wrap gap-3 mb-8" id="sortButtons"></div>
+
+        <!-- Loading State -->
+        <div id="loading" class="text-center py-20">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-orange"></div>
+            <p class="mt-4 text-light/60">Loading wallpapers...</p>
+        </div>
+
+        <!-- Wallpaper Grid -->
+        <div id="wallpaperGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" style="display: none;"></div>
+    </div>
+
+    <script>
+        const API_URL = '/backend/api/index.php';
+        let wallpapers = [];
+        let filter = 'all';
+        let sortBy = 'newest';
+        let likedWallpapers = new Set();
+
+        // Load wallpapers
+        async function loadWallpapers() {
+            try {
+                const formData = new FormData();
+                formData.append('action', 'get_wallpapers');
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                wallpapers = await response.json();
+                renderAll();
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('wallpaperGrid').style.display = 'grid';
+            } catch (error) {
+                console.error('Error loading wallpapers:', error);
+                document.getElementById('loading').innerHTML = '<p class="text-red-500">Error loading wallpapers</p>';
+            }
+        }
+
+        // Handle like
+        async function handleLike(wallpaperId) {
+            const isLiked = likedWallpapers.has(wallpaperId);
+
+            try {
+                const formData = new FormData();
+                formData.append('action', 'toggle_like');
+                formData.append('id', wallpaperId);
+                formData.append('liked', !isLiked ? 'true' : 'false');
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                // Update liked state
+                if (isLiked) {
+                    likedWallpapers.delete(wallpaperId);
+                } else {
+                    likedWallpapers.add(wallpaperId);
+                }
+
+                // Update wallpaper likes
+                const wallpaper = wallpapers.find(w => w.id == wallpaperId);
+                if (wallpaper) {
+                    wallpaper.likes = data.likes;
+                }
+
+                renderWallpapers();
+            } catch (error) {
+                console.error('Like error:', error);
+            }
+        }
+
+        // Handle download
+        async function handleDownload(wallpaperId) {
+            try {
+                const formData = new FormData();
+                formData.append('action', 'increment_download');
+                formData.append('id', wallpaperId);
+
+                await fetch(API_URL, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                // Update local state
+                const wallpaper = wallpapers.find(w => w.id == wallpaperId);
+                if (wallpaper) {
+                    wallpaper.downloads = (parseInt(wallpaper.downloads) || 0) + 1;
+                    renderWallpapers();
+                }
+            } catch (error) {
+                console.error('Download error:', error);
+            }
+        }
+
+        // Sort wallpapers
+        function getSortedWallpapers() {
+            const filtered = filter === 'all'
+                ? [...wallpapers]
+                : wallpapers.filter(w => w.type === filter);
+
+            switch (sortBy) {
+                case 'newest':
+                    return filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                case 'downloads':
+                    return filtered.sort((a, b) => (parseInt(b.downloads) || 0) - (parseInt(a.downloads) || 0));
+                case 'likes':
+                    return filtered.sort((a, b) => (parseInt(b.likes) || 0) - (parseInt(a.likes) || 0));
+                default:
+                    return filtered;
+            }
+        }
+
+        // Render filter buttons
+        function renderFilters() {
+            const filters = [
+                { value: 'all', label: 'All' },
+                { value: 'free', label: 'Free' },
+                { value: 'premium', label: 'Premium' }
+            ];
+
+            document.getElementById('filterButtons').innerHTML = filters.map(f => `
+                <button
+                    onclick="filter = '${f.value}'; renderAll();"
+                    class="px-4 py-2 rounded-lg font-bold text-sm transition-all ${
+                        filter === f.value
+                            ? 'bg-orange text-white'
+                            : 'bg-dark-700 text-light/60 hover:text-white border border-light/10'
+                    }"
+                >
+                    ${f.label}
+                </button>
+            `).join('');
+        }
+
+        // Render sort buttons
+        function renderSortButtons() {
+            const sorts = [
+                { value: 'newest', label: 'Newest' },
+                { value: 'downloads', label: 'Most Downloads' },
+                { value: 'likes', label: 'Most Likes' }
+            ];
+
+            document.getElementById('sortButtons').innerHTML = sorts.map(s => `
+                <button
+                    onclick="sortBy = '${s.value}'; renderWallpapers();"
+                    class="px-5 py-2.5 rounded-lg font-bold text-sm transition-all ${
+                        sortBy === s.value
+                            ? 'bg-orange text-white shadow-lg shadow-orange/30'
+                            : 'bg-dark-700 text-light/60 hover:text-white border border-light/10 hover:border-orange/30'
+                    }"
+                >
+                    ${s.label}
+                </button>
+            `).join('');
+        }
+
+        // Render wallpapers
+        function renderWallpapers() {
+            const sorted = getSortedWallpapers();
+
+            document.getElementById('wallpaperGrid').innerHTML = sorted.map(wallpaper => {
+                const isLiked = likedWallpapers.has(wallpaper.id);
+
+                return `
+                    <div class="group relative bg-dark-700 rounded-2xl overflow-hidden border border-light/10 hover:border-orange/50 transition-all hover:-translate-y-1">
+                        <!-- Image -->
+                        <div class="aspect-[3/4] bg-dark relative flex items-center justify-center">
+                            ${wallpaper.file_path ? `
+                                <img
+                                    src="${wallpaper.file_path}"
+                                    alt="${wallpaper.title}"
+                                    class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                    onerror="this.style.display='none'"
+                                />
+                            ` : ''}
+
+                            ${wallpaper.type === 'premium' ? `
+                                <div class="absolute top-3 right-3 bg-orange text-white text-xs font-bold px-3 py-1 rounded-full">
+                                    Premium
+                                </div>
+                            ` : ''}
+
+                            <!-- Download Overlay -->
+                            <div class="absolute inset-0 bg-gradient-to-t from-dark via-dark/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <button
+                                    onclick="handleDownload(${wallpaper.id})"
+                                    class="bg-orange hover:bg-orange-light text-white px-6 py-3 rounded-full font-bold flex items-center gap-2 transition-all hover:scale-105 shadow-lg shadow-orange/30"
+                                >
+                                    <span class="text-xl" style="line-height: 1">⬇️</span>
+                                    Download
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Info -->
+                        <div class="p-4 bg-dark-700">
+                            <h3 class="font-bold text-lg text-white mb-3 truncate">${wallpaper.title}</h3>
+                            <p class="text-light/50 text-sm mb-3">${wallpaper.style || 'Artwork'}</p>
+
+                            <div class="flex items-center justify-between">
+                                <!-- Like Section -->
+                                <button
+                                    onclick="handleLike(${wallpaper.id})"
+                                    class="flex items-center gap-2 group/like transition-all hover:opacity-80"
+                                    title="Like this wallpaper"
+                                >
+                                    <span class="text-xl transition-all ${isLiked ? 'scale-110' : ''}" style="line-height: 1">
+                                        ${isLiked ? '❤️' : '🤍'}
+                                    </span>
+                                    <span class="text-sm font-bold ${isLiked ? 'text-orange' : 'text-light/70'}">
+                                        ${wallpaper.likes || 0}
+                                    </span>
+                                </button>
+
+                                <!-- Download Section -->
+                                <div class="flex items-center gap-2" title="Total downloads">
+                                    <span class="text-lg" style="line-height: 1">⬇️</span>
+                                    <span class="text-sm font-bold text-light/70">
+                                        ${wallpaper.downloads || 0}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Render all
+        function renderAll() {
+            renderFilters();
+            renderSortButtons();
+            renderWallpapers();
+        }
+
+        // Load on page load
+        loadWallpapers();
+    </script>
+</body>
+</html>

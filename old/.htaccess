@@ -2,7 +2,7 @@
 # Verwende diese Version wenn die normale .htaccess Probleme macht
 
 # Standard-Index
-DirectoryIndex index.php
+DirectoryIndex index.html index.php
 
 # Verhindere Zugriff auf sensible Dateien
 <FilesMatch "^(config\.php|\.git)">

@@ -1,30 +1,21 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Heart, RefreshCw, Zap } from 'lucide-react'
-import axios from 'axios'
+import { Heart, Sparkles } from 'lucide-react'
 
 const Home = () => {
-  const [excuse, setExcuse] = useState("Klick den Button für eine Ausrede!")
-  const [loading, setLoading] = useState(false)
+  const [ideas, setIdeas] = useState([
+    "Gravity always wins",
+    "Eat, Sleep, Ride",
+    "Mud is my makeup"
+  ])
+  const [newIdea, setNewIdea] = useState('')
   const navigate = useNavigate()
 
-  const API_URL = '/backend/api/index.php'
-
-  const generateExcuse = async () => {
-    setLoading(true)
-    try {
-      const formData = new FormData()
-      formData.append('action', 'get_random_excuse')
-
-      const response = await axios.post(API_URL, formData)
-      if (response.data.text) {
-        setExcuse(response.data.text)
-      }
-    } catch (error) {
-      console.error('Error fetching excuse:', error)
-      setExcuse('Fehler beim Laden der Ausrede!')
-    } finally {
-      setLoading(false)
+  const handleSubmitIdea = (e) => {
+    e.preventDefault()
+    if (newIdea.trim()) {
+      setIdeas([newIdea, ...ideas])
+      setNewIdea('')
     }
   }
 
@@ -37,7 +28,7 @@ const Home = () => {
 
         <div className="inline-flex items-center space-x-2 bg-blue/10 border border-blue/30 rounded-full px-4 py-1.5 mb-8">
           <Heart size={14} className="text-orange fill-orange" />
-          <span className="text-light text-xs font-bold tracking-wide uppercase">Community & Lifestyle</span>
+          <span className="text-light text-xs font-bold tracking-wide uppercase">MTB Community Page</span>
         </div>
 
         <h1 className="text-5xl md:text-8xl font-black italic tracking-tighter mb-6 text-white">
@@ -48,7 +39,7 @@ const Home = () => {
         </h1>
 
         <p className="text-xl text-light/80 max-w-2xl mb-10 font-light">
-          Die Homebase für alle, die das Biken lieben. Memes, Kunst und Good Vibes only.
+          The home base for everyone who loves biking. Memes, art, and good vibes only.
         </p>
 
         <div className="flex gap-4 flex-wrap justify-center">
@@ -56,46 +47,71 @@ const Home = () => {
             onClick={() => navigate('/wallpapers')}
             className="px-8 py-4 bg-orange hover:bg-orange-light text-white rounded-xl font-bold transition-all hover:scale-105 shadow-[0_0_20px_-5px] shadow-orange"
           >
-            Zur Galerie
+            Gallery
           </button>
           <button
             onClick={() => navigate('/shop')}
             className="px-8 py-4 bg-blue/10 hover:bg-blue/20 border border-blue/50 text-light rounded-xl font-bold transition-all"
           >
-            Zum Shop
+            Shop
           </button>
         </div>
       </div>
 
-      {/* MTB Ausreden-Generator */}
+      {/* T-Shirt Idea Board */}
       <div className="max-w-4xl mx-auto px-4 py-12">
         <div className="bg-dark-700 rounded-3xl border border-blue/30 p-8 md:p-12 text-center shadow-2xl relative overflow-hidden group">
           <div className="absolute -top-24 -right-24 w-64 h-64 bg-orange/10 rounded-full blur-3xl group-hover:bg-orange/20 transition-all duration-700"></div>
 
-          <h2 className="text-3xl md:text-4xl font-bold mb-8 text-white">
-            Der MTB Ausreden-Generator
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">
+            T-Shirt Idea Board
           </h2>
 
-          <div className="bg-dark rounded-xl p-8 mb-8 min-h-[120px] flex items-center justify-center border border-light/10 relative">
-            <div className="absolute top-2 left-2 text-blue/20">
-              <Zap size={24} />
-            </div>
-            <p className="text-2xl md:text-3xl font-serif italic text-light">
-              "{excuse}"
-            </p>
-          </div>
+          <p className="text-light/70 mb-8">
+            Share your ideas for funny or cool MTB T-shirt slogans
+          </p>
 
-          <button
-            onClick={generateExcuse}
-            disabled={loading}
-            className="group relative inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-blue to-blue-dark rounded-xl font-bold text-lg text-white hover:brightness-110 transition-all active:scale-95 shadow-lg shadow-blue/30 disabled:opacity-50"
-          >
-            <RefreshCw
-              className={`${loading ? 'animate-spin' : 'group-hover:rotate-180'} transition-transform duration-500`}
-              size={20}
-            />
-            {loading ? 'Lädt...' : 'Neue Ausrede generieren'}
-          </button>
+          {/* Input Form */}
+          <form onSubmit={handleSubmitIdea} className="mb-12">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <input
+                type="text"
+                value={newIdea}
+                onChange={(e) => setNewIdea(e.target.value)}
+                placeholder="Your awesome slogan idea..."
+                className="flex-1 px-6 py-4 bg-dark border border-light/20 rounded-xl text-white placeholder-light/40 transition-colors"
+                style={{ outline: 'none' }}
+                onFocus={(e) => e.target.style.borderColor = 'var(--color-orange)'}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(177, 221, 233, 0.2)'}
+              />
+              <button
+                type="submit"
+                className="px-8 py-4 bg-gradient-to-r from-blue to-blue-dark hover:brightness-110 text-white rounded-xl font-bold transition-all shadow-lg shadow-blue/30 flex items-center justify-center gap-2"
+              >
+                <Sparkles size={20} />
+                Submit Idea
+              </button>
+            </div>
+          </form>
+
+          {/* Recent Ideas List */}
+          <div className="text-left">
+            <h3 className="text-2xl font-semibold mb-6 text-white">
+              Recent Ideas
+            </h3>
+            <div className="space-y-3">
+              {ideas.map((idea, index) => (
+                <div
+                  key={index}
+                  className="bg-dark border border-light/10 rounded-xl px-6 py-4 hover:border-orange/50 transition-all group"
+                >
+                  <p className="text-lg text-light/90 group-hover:text-white transition-colors">
+                    "{idea}"
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -103,18 +119,18 @@ const Home = () => {
       <div className="max-w-7xl mx-auto px-4 py-16">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <FeatureCard
-            title="Wallpapers"
-            description="Kostenlose und Premium Wallpapers für dein Setup"
+            title="Gallery"
+            description="Free and premium wallpapers for your setup"
             icon="🎨"
           />
           <FeatureCard
             title="Shop"
-            description="Merch, Sticker und mehr für MTB-Enthusiasten"
+            description="Merch, stickers, and more for MTB enthusiasts"
             icon="🛒"
           />
           <FeatureCard
             title="Community"
-            description="Teile deine Leidenschaft mit Gleichgesinnten"
+            description="Share your passion with like-minded riders"
             icon="❤️"
           />
         </div>

@@ -1,0 +1,47 @@
+# MTB Love - Apache Configuration
+# Konfiguration für mtblove.com
+
+# Aktiviere mod_rewrite
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # API Requests an backend/api/index.php weiterleiten
+    RewriteRule ^api/(.*)$ backend/api/index.php [L,QSA]
+
+    # Statische Assets direkt ausliefern
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^ - [L]
+
+    # Upload-Verzeichnis erlauben
+    RewriteCond %{REQUEST_URI} ^/uploads/
+    RewriteRule ^ - [L]
+
+    # Alle anderen Requests an React Frontend weiterleiten
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ frontend/dist/index.html [L]
+</IfModule>
+
+# Sicherheitsheader
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+</IfModule>
+
+# Verhindere Zugriff auf sensible Dateien
+<FilesMatch "^(config\.php|\.git|\.env|composer\.json|package\.json)">
+    Require all denied
+</FilesMatch>
+
+# Verhindere Directory Listing
+Options -Indexes
+
+# PHP Einstellungen (optional, falls erlaubt)
+<IfModule mod_php.c>
+    php_value upload_max_filesize 10M
+    php_value post_max_size 10M
+    php_value max_execution_time 300
+    php_value max_input_time 300
+</IfModule>

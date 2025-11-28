@@ -67,7 +67,7 @@ const App = () => {
             <div className="flex items-center cursor-pointer group" onClick={() => setActiveTab('home')}>
               {/* Logo */}
               <img
-                src="/logo.jpg"
+                src="/logo.svg"
                 alt="MTB Love Logo"
                 className="h-12 w-auto mr-3 group-hover:scale-110 transition-transform"
               />

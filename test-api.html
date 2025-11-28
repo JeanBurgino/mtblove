@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MTB Love - API Test</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #0a1016;
+            color: #b1dde9;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #0f1720;
+            border: 1px solid #0268a8;
+            border-radius: 8px;
+        }
+        h2 {
+            color: #ed7f20;
+        }
+        button {
+            background: #ed7f20;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #ffb056;
+        }
+        pre {
+            background: #020b12;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .success { color: #4ade80; }
+        .error { color: #ef4444; }
+    </style>
+</head>
+<body>
+    <h1>🔧 MTB Love - API & Database Test</h1>
+
+    <div class="section">
+        <h2>Test 1: Get Wallpapers</h2>
+        <button onclick="testGetWallpapers()">Test API</button>
+        <pre id="test1-result">Click button to test...</pre>
+    </div>
+
+    <div class="section">
+        <h2>Test 2: Check Likes Field</h2>
+        <button onclick="checkLikesField()">Check Likes</button>
+        <pre id="test2-result">Click button to test...</pre>
+    </div>
+
+    <div class="section">
+        <h2>Test 3: Toggle Like (ID: 1)</h2>
+        <button onclick="testToggleLike(true)">Add Like</button>
+        <button onclick="testToggleLike(false)">Remove Like</button>
+        <pre id="test3-result">Click button to test...</pre>
+    </div>
+
+    <script>
+        const API_URL = '/backend/api/index.php';
+
+        async function testGetWallpapers() {
+            const result = document.getElementById('test1-result');
+            result.textContent = 'Loading...';
+
+            try {
+                const formData = new FormData();
+                formData.append('action', 'get_wallpapers');
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                result.innerHTML = `<span class="success">✓ Success!</span>\n\n` +
+                    `Found ${data.length} wallpapers\n\n` +
+                    JSON.stringify(data, null, 2);
+
+            } catch (error) {
+                result.innerHTML = `<span class="error">✗ Error:</span>\n${error.message}`;
+            }
+        }
+
+        async function checkLikesField() {
+            const result = document.getElementById('test2-result');
+            result.textContent = 'Loading...';
+
+            try {
+                const formData = new FormData();
+                formData.append('action', 'get_wallpapers');
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.length === 0) {
+                    result.innerHTML = `<span class="error">✗ No wallpapers found in database</span>`;
+                    return;
+                }
+
+                const firstWallpaper = data[0];
+                const hasLikes = 'likes' in firstWallpaper;
+                const hasDownloads = 'downloads' in firstWallpaper;
+
+                result.innerHTML =
+                    `<span class="${hasLikes ? 'success' : 'error'}">${hasLikes ? '✓' : '✗'} Likes field: ${hasLikes ? 'EXISTS' : 'MISSING'}</span>\n` +
+                    `<span class="${hasDownloads ? 'success' : 'error'}">${hasDownloads ? '✓' : '✗'} Downloads field: ${hasDownloads ? 'EXISTS' : 'MISSING'}</span>\n\n` +
+                    `Sample wallpaper data:\n` +
+                    `- ID: ${firstWallpaper.id}\n` +
+                    `- Title: ${firstWallpaper.title}\n` +
+                    `- Likes: ${firstWallpaper.likes || 0}\n` +
+                    `- Downloads: ${firstWallpaper.downloads || 0}\n`;
+
+            } catch (error) {
+                result.innerHTML = `<span class="error">✗ Error:</span>\n${error.message}`;
+            }
+        }
+
+        async function testToggleLike(liked) {
+            const result = document.getElementById('test3-result');
+            result.textContent = 'Loading...';
+
+            try {
+                const formData = new FormData();
+                formData.append('action', 'toggle_like');
+                formData.append('id', '1');
+                formData.append('liked', liked ? 'true' : 'false');
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                result.innerHTML = `<span class="success">✓ Success!</span>\n\n` +
+                    `Action: ${liked ? 'Added' : 'Removed'} like\n` +
+                    `New like count: ${data.likes}\n\n` +
+                    JSON.stringify(data, null, 2);
+
+            } catch (error) {
+                result.innerHTML = `<span class="error">✗ Error:</span>\n${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>

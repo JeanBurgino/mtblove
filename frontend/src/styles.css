@@ -1,5 +1,10 @@
 /* MTB Love - Global Styles */
 
+/* Tailwind CSS Directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* Reset & Base */
 * {
   margin: 0;

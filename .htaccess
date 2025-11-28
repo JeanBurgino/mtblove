@@ -9,6 +9,12 @@
     # API Requests an backend/api/index.php weiterleiten
     RewriteRule ^api/(.*)$ backend/api/index.php [L,QSA]
 
+    # Assets aus frontend/dist/assets/ ausliefern
+    RewriteRule ^assets/(.*)$ frontend/dist/assets/$1 [L]
+
+    # Logo von Root ausliefern
+    RewriteRule ^logo\.(svg|jpg|png)$ logo.$1 [L]
+
     # Statische Assets direkt ausliefern
     RewriteCond %{REQUEST_FILENAME} -f
     RewriteRule ^ - [L]
@@ -21,6 +27,15 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^(.*)$ frontend/dist/index.html [L]
+</IfModule>
+
+# MIME Types für Assets
+<IfModule mod_mime.c>
+    AddType application/javascript .js
+    AddType text/css .css
+    AddType image/svg+xml .svg
+    AddType image/png .png
+    AddType image/jpeg .jpg .jpeg
 </IfModule>
 
 # Sicherheitsheader

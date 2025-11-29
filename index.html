@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>MTB Love - Ride With Passion</title>
 
     <!-- Tailwind CSS CDN -->
@@ -342,7 +345,9 @@
                 },
 
                 loadGalleryPage() {
-                    window.location.href = '/wallpapers-standalone.html';
+                    console.log('Redirecting to wallpapers-standalone.html');
+                    // Cache-Busting Parameter hinzufügen
+                    window.location.href = '/wallpapers-standalone.html?v=' + Date.now();
                 },
 
                 loadShopPage() {

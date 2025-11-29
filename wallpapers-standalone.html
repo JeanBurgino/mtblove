@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -56,6 +56,17 @@
 
         <!-- Sort Options -->
         <div class="flex flex-wrap gap-3 mb-8" id="sortButtons"></div>
+
+        <!-- Icon Test (Debug) -->
+        <div class="bg-orange/20 border-2 border-orange rounded-lg p-4 mb-8">
+            <h3 class="text-white font-bold mb-2">🔍 Icon Test:</h3>
+            <div class="flex gap-4 items-center text-2xl">
+                <span>❤️ Red Heart</span>
+                <span>🤍 White Heart</span>
+                <span>⬇️ Download Arrow</span>
+            </div>
+            <p class="text-sm text-light/70 mt-2">Wenn Sie diese Emoji sehen können, funktionieren die Icons!</p>
+        </div>
 
         <!-- Loading State -->
         <div id="loading" class="text-center py-20">
@@ -220,9 +231,11 @@
         // Render wallpapers
         function renderWallpapers() {
             const sorted = getSortedWallpapers();
+            console.log('Rendering wallpapers:', sorted.length);
 
             document.getElementById('wallpaperGrid').innerHTML = sorted.map(wallpaper => {
                 const isLiked = likedWallpapers.has(wallpaper.id);
+                console.log(`Wallpaper ${wallpaper.id}: liked=${isLiked}, likes=${wallpaper.likes}`);
 
                 return `
                     <div class="group relative bg-dark-700 rounded-2xl overflow-hidden border border-light/10 hover:border-orange/50 transition-all hover:-translate-y-1">
@@ -249,7 +262,7 @@
                                     onclick="handleDownload(${wallpaper.id})"
                                     class="bg-white text-blue px-6 py-3 rounded-full font-bold flex items-center gap-2 hover:bg-light transition-all"
                                 >
-                                    <span class="text-xl" style="line-height: 1">⬇️</span>
+                                    <span class="text-2xl" style="line-height: 1; display: inline-block;">\u2B07\uFE0F</span>
                                     Download
                                 </button>
                             </div>
@@ -267,8 +280,8 @@
                                     class="flex items-center gap-2 group/like transition-all hover:opacity-80"
                                     title="Like this wallpaper"
                                 >
-                                    <span class="text-xl transition-all ${isLiked ? 'scale-110' : ''}" style="line-height: 1">
-                                        ${isLiked ? '❤️' : '🤍'}
+                                    <span class="text-2xl transition-all ${isLiked ? 'scale-125' : ''}" style="line-height: 1; display: inline-block; min-width: 24px; min-height: 24px;">
+                                        ${isLiked ? '\u2764\uFE0F' : '\u{1F90D}'}
                                     </span>
                                     <span class="text-sm font-bold ${isLiked ? 'text-orange' : 'text-light/70'}">
                                         ${wallpaper.likes || 0}
@@ -277,7 +290,7 @@
 
                                 <!-- Download Section -->
                                 <div class="flex items-center gap-2" title="Total downloads">
-                                    <span class="text-lg" style="line-height: 1">⬇️</span>
+                                    <span class="text-2xl" style="line-height: 1; display: inline-block; min-width: 24px; min-height: 24px;">\u2B07\uFE0F</span>
                                     <span class="text-sm font-bold text-light/70">
                                         ${wallpaper.downloads || 0}
                                     </span>

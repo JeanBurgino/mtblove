@@ -23,10 +23,13 @@
     RewriteCond %{REQUEST_URI} ^/uploads/
     RewriteRule ^ - [L]
 
-    # Alle anderen Requests an React Frontend weiterleiten
+    # Redirect /wallpapers to standalone gallery
+    RewriteRule ^wallpapers/?$ /wallpapers-standalone.html [R=301,L]
+
+    # Alle anderen Requests an Alpine.js App weiterleiten (kein React mehr!)
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule ^(.*)$ frontend/dist/index.html [L]
+    RewriteRule ^(.*)$ index.html [L]
 </IfModule>
 
 # MIME Types für Assets

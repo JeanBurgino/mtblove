@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MTB Love - Ride With Passion</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Alpine.js CDN -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            DEFAULT: '#0a1016',
+                            700: '#0f1720',
+                            800: '#0d1419',
+                            900: '#020b12',
+                        },
+                        blue: {
+                            DEFAULT: '#0268a8',
+                            dark: '#025a90',
+                        },
+                        orange: {
+                            DEFAULT: '#ed7f20',
+                            light: '#ffb056',
+                        },
+                        light: '#b1dde9',
+                    },
+                },
+            },
+        }
+    </script>
+
+    <style>
+        body {
+            background: #0a1016;
+            color: #b1dde9;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body x-data="app()" x-init="init()">
+
+    <!-- Navigation -->
+    <nav class="fixed w-full z-50 bg-dark-800/90 backdrop-blur-md border-b border-blue/10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo -->
+                <a href="#" @click.prevent="navigateTo('home')" class="flex items-center cursor-pointer group">
+                    <span class="text-2xl font-black italic tracking-tighter text-blue">
+                        MTB <span class="text-orange">Love</span>
+                    </span>
+                </a>
+
+                <!-- Desktop Navigation -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#" @click.prevent="navigateTo('home')"
+                       :class="currentPage === 'home' ? 'text-white' : 'text-light/60 hover:text-white'"
+                       class="text-sm font-bold uppercase tracking-wide transition-colors">
+                        Home
+                    </a>
+                    <a href="#" @click.prevent="navigateTo('gallery')"
+                       :class="currentPage === 'gallery' ? 'text-white' : 'text-light/60 hover:text-white'"
+                       class="text-sm font-bold uppercase tracking-wide transition-colors">
+                        Gallery
+                    </a>
+                    <a href="#" @click.prevent="navigateTo('shop')"
+                       :class="currentPage === 'shop' ? 'text-white' : 'text-light/60 hover:text-white'"
+                       class="text-sm font-bold uppercase tracking-wide transition-colors">
+                        Shop
+                    </a>
+
+                    <div class="h-6 w-px bg-light/20 mx-2"></div>
+
+                    <!-- Social Links -->
+                    <div class="flex space-x-3 text-light">
+                        <span class="hover:text-blue cursor-pointer transition-colors">📘</span>
+                        <span class="hover:text-orange cursor-pointer transition-colors">📷</span>
+                        <span class="hover:text-light cursor-pointer transition-colors">🎵</span>
+                    </div>
+
+                    <!-- Admin Link -->
+                    <template x-if="isAuthenticated">
+                        <div class="flex items-center gap-3">
+                            <a href="#" @click.prevent="navigateTo('admin')" class="text-sm text-light/80 hover:text-white">
+                                Admin (<span x-text="user?.username"></span>)
+                            </a>
+                            <button @click="logout()"
+                                class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-xs font-bold text-red-500 transition-colors">
+                                🚪 LOGOUT
+                            </button>
+                        </div>
+                    </template>
+                    <template x-if="!isAuthenticated">
+                        <a href="#" @click.prevent="navigateTo('login')"
+                            class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue/10 hover:bg-blue/20 border border-blue/30 text-xs font-bold text-blue transition-colors">
+                            👤 LOGIN
+                        </a>
+                    </template>
+                </div>
+
+                <!-- Mobile Menu Button -->
+                <div class="md:hidden">
+                    <button @click="mobileMenuOpen = !mobileMenuOpen" class="text-light p-2 hover:text-white">
+                        <span x-show="!mobileMenuOpen">☰</span>
+                        <span x-show="mobileMenuOpen">✕</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div x-show="mobileMenuOpen" x-cloak class="md:hidden bg-dark-800 border-b border-light/10">
+            <div class="px-2 pt-2 pb-3 space-y-1">
+                <a href="#" @click.prevent="navigateTo('home'); mobileMenuOpen = false"
+                   class="block px-3 py-3 rounded-lg text-base font-medium text-light hover:bg-blue/20 hover:text-white">
+                    Home
+                </a>
+                <a href="#" @click.prevent="navigateTo('gallery'); mobileMenuOpen = false"
+                   class="block px-3 py-3 rounded-lg text-base font-medium text-light hover:bg-blue/20 hover:text-white">
+                    Gallery
+                </a>
+                <a href="#" @click.prevent="navigateTo('shop'); mobileMenuOpen = false"
+                   class="block px-3 py-3 rounded-lg text-base font-medium text-light hover:bg-blue/20 hover:text-white">
+                    Shop
+                </a>
+                <div class="h-px bg-light/10 my-2"></div>
+                <template x-if="isAuthenticated">
+                    <div>
+                        <a href="#" @click.prevent="navigateTo('admin'); mobileMenuOpen = false"
+                           class="block px-3 py-3 rounded-lg text-base font-medium text-light hover:bg-blue/20 hover:text-white">
+                            Admin Dashboard
+                        </a>
+                        <button @click="logout(); mobileMenuOpen = false"
+                                class="w-full text-left px-3 py-3 rounded-lg text-base font-medium text-red-500 hover:bg-red-500/20">
+                            Logout
+                        </button>
+                    </div>
+                </template>
+                <template x-if="!isAuthenticated">
+                    <a href="#" @click.prevent="navigateTo('login'); mobileMenuOpen = false"
+                       class="block px-3 py-3 rounded-lg text-base font-medium text-light hover:bg-blue/20 hover:text-white">
+                        Login
+                    </a>
+                </template>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="pt-16">
+        <!-- Home Page -->
+        <div x-show="currentPage === 'home'" x-cloak>
+            <div id="home-page"></div>
+        </div>
+
+        <!-- Gallery Page -->
+        <div x-show="currentPage === 'gallery'" x-cloak>
+            <div id="gallery-page"></div>
+        </div>
+
+        <!-- Shop Page -->
+        <div x-show="currentPage === 'shop'" x-cloak>
+            <div id="shop-page"></div>
+        </div>
+
+        <!-- Admin Login -->
+        <div x-show="currentPage === 'login'" x-cloak>
+            <div id="login-page"></div>
+        </div>
+
+        <!-- Admin Dashboard -->
+        <div x-show="currentPage === 'admin'" x-cloak>
+            <div id="admin-page"></div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark-800 border-t border-light/10 mt-20">
+        <div class="max-w-7xl mx-auto px-4 py-8 text-center">
+            <p class="text-light/60 text-sm">
+                © 2025 MTB Love - Made with ❤️ for the MTB Community
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        function app() {
+            return {
+                currentPage: 'home',
+                mobileMenuOpen: false,
+                isAuthenticated: false,
+                user: null,
+                API_URL: '/backend/api/index.php',
+
+                init() {
+                    // Check authentication
+                    this.checkAuth();
+
+                    // Load initial page
+                    this.loadPage('home');
+
+                    // Handle browser back/forward
+                    window.addEventListener('popstate', (e) => {
+                        if (e.state && e.state.page) {
+                            this.currentPage = e.state.page;
+                            this.loadPage(e.state.page);
+                        }
+                    });
+                },
+
+                async checkAuth() {
+                    try {
+                        const formData = new FormData();
+                        formData.append('action', 'check_auth');
+
+                        const response = await fetch(this.API_URL, {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        const data = await response.json();
+                        this.isAuthenticated = data.authenticated || false;
+                        this.user = data.user || null;
+                    } catch (error) {
+                        console.error('Auth check error:', error);
+                    }
+                },
+
+                navigateTo(page) {
+                    this.currentPage = page;
+                    this.loadPage(page);
+                    window.history.pushState({ page }, '', `#${page}`);
+                    window.scrollTo(0, 0);
+                },
+
+                loadPage(page) {
+                    switch(page) {
+                        case 'home':
+                            this.loadHomePage();
+                            break;
+                        case 'gallery':
+                            this.loadGalleryPage();
+                            break;
+                        case 'shop':
+                            this.loadShopPage();
+                            break;
+                        case 'login':
+                            this.loadLoginPage();
+                            break;
+                        case 'admin':
+                            if (this.isAuthenticated) {
+                                this.loadAdminPage();
+                            } else {
+                                this.navigateTo('login');
+                            }
+                            break;
+                    }
+                },
+
+                async logout() {
+                    try {
+                        const formData = new FormData();
+                        formData.append('action', 'logout');
+
+                        await fetch(this.API_URL, {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        this.isAuthenticated = false;
+                        this.user = null;
+                        this.navigateTo('home');
+                    } catch (error) {
+                        console.error('Logout error:', error);
+                    }
+                },
+
+                loadHomePage() {
+                    document.getElementById('home-page').innerHTML = `
+                        <div class="relative overflow-hidden py-24 lg:py-32 flex flex-col items-center text-center px-4">
+                            <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-blue/20 blur-[100px] rounded-full -z-10 pointer-events-none mix-blend-screen"></div>
+                            <div class="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-orange/10 blur-[80px] rounded-full -z-10 pointer-events-none mix-blend-screen"></div>
+
+                            <div class="inline-flex items-center space-x-2 bg-blue/10 border border-blue/30 rounded-full px-4 py-1.5 mb-8">
+                                <span style="color: #ed7f20; font-size: 14px;">❤️</span>
+                                <span class="text-light text-xs font-bold tracking-wide uppercase">MTB Community Page</span>
+                            </div>
+
+                            <h1 class="text-5xl md:text-8xl font-black italic tracking-tighter mb-6 text-white">
+                                RIDE WITH <br />
+                                <span class="text-transparent bg-clip-text bg-gradient-to-r from-orange via-orange-light to-orange">
+                                    PASSION
+                                </span>
+                            </h1>
+
+                            <p class="text-xl text-light/80 max-w-2xl mb-10 font-light">
+                                The home base for everyone who loves biking. Memes, art, and good vibes only.
+                            </p>
+
+                            <div class="flex gap-4 flex-wrap justify-center">
+                                <a href="#" @click.prevent="navigateTo('gallery')"
+                                    class="px-8 py-4 bg-orange hover:bg-orange-light text-white rounded-xl font-bold transition-all hover:scale-105 shadow-[0_0_20px_-5px] shadow-orange inline-block">
+                                    Gallery
+                                </a>
+                                <a href="#" @click.prevent="navigateTo('shop')"
+                                    class="px-8 py-4 bg-blue/10 hover:bg-blue/20 border border-blue/50 text-light rounded-xl font-bold transition-all inline-block">
+                                    Shop
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Features -->
+                        <div class="max-w-7xl mx-auto px-4 py-16">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                <div class="bg-dark-700 border border-light/10 rounded-2xl p-6 hover:border-orange/50 transition-all group">
+                                    <div class="text-5xl mb-4 group-hover:scale-110 transition-transform">🎨</div>
+                                    <h3 class="text-xl font-bold mb-2 text-white">Gallery</h3>
+                                    <p class="text-light/70">Free and premium wallpapers for your setup</p>
+                                </div>
+                                <div class="bg-dark-700 border border-light/10 rounded-2xl p-6 hover:border-orange/50 transition-all group">
+                                    <div class="text-5xl mb-4 group-hover:scale-110 transition-transform">🛒</div>
+                                    <h3 class="text-xl font-bold mb-2 text-white">Shop</h3>
+                                    <p class="text-light/70">Merch, stickers, and more for MTB enthusiasts</p>
+                                </div>
+                                <div class="bg-dark-700 border border-light/10 rounded-2xl p-6 hover:border-orange/50 transition-all group">
+                                    <div class="text-5xl mb-4 group-hover:scale-110 transition-transform">❤️</div>
+                                    <h3 class="text-xl font-bold mb-2 text-white">Community</h3>
+                                    <p class="text-light/70">Share your passion with like-minded riders</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                },
+
+                loadGalleryPage() {
+                    window.location.href = '/wallpapers-standalone.html';
+                },
+
+                loadShopPage() {
+                    document.getElementById('shop-page').innerHTML = `
+                        <div class="max-w-7xl mx-auto px-4 py-16">
+                            <h1 class="text-4xl md:text-5xl font-black italic text-white mb-2">
+                                MTB SHOP
+                            </h1>
+                            <p class="text-light/70 mb-12">
+                                Merchandise and gear for passionate riders
+                            </p>
+
+                            <div id="products-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                <div class="text-center py-20">
+                                    <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-orange"></div>
+                                    <p class="mt-4 text-light/60">Loading products...</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    this.loadProducts();
+                },
+
+                async loadProducts() {
+                    try {
+                        const formData = new FormData();
+                        formData.append('action', 'get_products');
+
+                        const response = await fetch(this.API_URL, {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        const products = await response.json();
+
+                        const grid = document.getElementById('products-grid');
+                        if (products.length === 0) {
+                            grid.innerHTML = '<p class="text-light/60 text-center col-span-full">No products available</p>';
+                            return;
+                        }
+
+                        grid.innerHTML = products.map(product => `
+                            <div class="bg-dark-700 rounded-2xl overflow-hidden border border-light/10 hover:border-orange/50 transition-all hover:-translate-y-1">
+                                <div class="aspect-square bg-dark flex items-center justify-center">
+                                    ${product.image_path ?
+                                        `<img src="${product.image_path}" alt="${product.name}" class="w-full h-full object-cover">` :
+                                        '<span class="text-6xl">🛍️</span>'
+                                    }
+                                </div>
+                                <div class="p-6">
+                                    <h3 class="font-bold text-xl text-white mb-2">${product.name}</h3>
+                                    <p class="text-light/70 text-sm mb-4">${product.description || ''}</p>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-2xl font-bold text-orange">${product.price} €</span>
+                                        <button class="bg-orange hover:bg-orange-light text-white px-4 py-2 rounded-lg font-bold transition-all">
+                                            Kaufen
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('');
+                    } catch (error) {
+                        console.error('Error loading products:', error);
+                    }
+                },
+
+                loadLoginPage() {
+                    document.getElementById('login-page').innerHTML = `
+                        <div class="max-w-md mx-auto px-4 py-16">
+                            <div class="bg-dark-700 rounded-2xl border border-blue/30 p-8">
+                                <h2 class="text-3xl font-bold text-white mb-6 text-center">Admin Login</h2>
+                                <form id="login-form" class="space-y-4">
+                                    <div>
+                                        <label class="block text-light/70 mb-2">Username</label>
+                                        <input type="text" name="username" required
+                                            class="w-full px-4 py-3 bg-dark border border-light/20 rounded-lg text-white focus:border-orange outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="block text-light/70 mb-2">Password</label>
+                                        <input type="password" name="password" required
+                                            class="w-full px-4 py-3 bg-dark border border-light/20 rounded-lg text-white focus:border-orange outline-none">
+                                    </div>
+                                    <div id="login-error" class="text-red-500 text-sm hidden"></div>
+                                    <button type="submit"
+                                        class="w-full bg-orange hover:bg-orange-light text-white py-3 rounded-lg font-bold transition-all">
+                                        Login
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    `;
+
+                    document.getElementById('login-form').addEventListener('submit', async (e) => {
+                        e.preventDefault();
+                        const formData = new FormData(e.target);
+                        formData.append('action', 'login');
+
+                        try {
+                            const response = await fetch(this.API_URL, {
+                                method: 'POST',
+                                body: formData
+                            });
+
+                            const data = await response.json();
+
+                            if (data.success) {
+                                await this.checkAuth();
+                                this.navigateTo('admin');
+                            } else {
+                                document.getElementById('login-error').textContent = data.error || 'Login failed';
+                                document.getElementById('login-error').classList.remove('hidden');
+                            }
+                        } catch (error) {
+                            console.error('Login error:', error);
+                        }
+                    });
+                },
+
+                loadAdminPage() {
+                    document.getElementById('admin-page').innerHTML = `
+                        <div class="max-w-7xl mx-auto px-4 py-16">
+                            <h1 class="text-4xl font-bold text-white mb-8">Admin Dashboard</h1>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div class="bg-dark-700 border border-light/10 rounded-2xl p-6">
+                                    <h3 class="text-xl font-bold text-white mb-2">Wallpapers</h3>
+                                    <p class="text-light/70">Manage gallery wallpapers</p>
+                                </div>
+                                <div class="bg-dark-700 border border-light/10 rounded-2xl p-6">
+                                    <h3 class="text-xl font-bold text-white mb-2">Products</h3>
+                                    <p class="text-light/70">Manage shop products</p>
+                                </div>
+                                <div class="bg-dark-700 border border-light/10 rounded-2xl p-6">
+                                    <h3 class="text-xl font-bold text-white mb-2">Stats</h3>
+                                    <p class="text-light/70">View statistics</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+        }
+    </script>
+</body>
+</html>

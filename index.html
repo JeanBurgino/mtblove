@@ -367,18 +367,13 @@
                     document.getElementById('gallery-page').innerHTML = `
                         <div class="max-w-7xl mx-auto px-4 py-16">
                             <!-- Header -->
-                            <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
-                                <div>
-                                    <h1 class="text-4xl md:text-5xl font-black italic text-white mb-2">
-                                        WALLPAPER GALLERY
-                                    </h1>
-                                    <p class="text-light/70">
-                                        Free and premium wallpapers for your setup
-                                    </p>
-                                </div>
-
-                                <!-- Filter Buttons -->
-                                <div class="flex gap-2" id="filterButtons"></div>
+                            <div class="mb-8">
+                                <h1 class="text-4xl md:text-5xl font-black italic text-white mb-2">
+                                    WALLPAPER GALLERY
+                                </h1>
+                                <p class="text-light/70">
+                                    Wallpapers for your setup
+                                </p>
                             </div>
 
                             <!-- Sort Options -->
@@ -477,19 +472,17 @@
                 },
 
                 getSortedWallpapers() {
-                    const filtered = this.wallpaperFilter === 'all'
-                        ? [...this.wallpapers]
-                        : this.wallpapers.filter(w => w.type === this.wallpaperFilter);
+                    const sorted = [...this.wallpapers];
 
                     switch (this.wallpaperSort) {
                         case 'newest':
-                            return filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                            return sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
                         case 'downloads':
-                            return filtered.sort((a, b) => (parseInt(b.downloads) || 0) - (parseInt(a.downloads) || 0));
+                            return sorted.sort((a, b) => (parseInt(b.downloads) || 0) - (parseInt(a.downloads) || 0));
                         case 'likes':
-                            return filtered.sort((a, b) => (parseInt(b.likes) || 0) - (parseInt(a.likes) || 0));
+                            return sorted.sort((a, b) => (parseInt(b.likes) || 0) - (parseInt(a.likes) || 0));
                         default:
-                            return filtered;
+                            return sorted;
                     }
                 },
 
@@ -562,12 +555,6 @@
                                             />
                                         ` : ''}
 
-                                        ${wallpaper.type === 'premium' ? `
-                                            <div class="absolute top-3 right-3 bg-orange text-white text-xs font-bold px-3 py-1 rounded-full">
-                                                Premium
-                                            </div>
-                                        ` : ''}
-
                                         <!-- Download Overlay -->
                                         <div class="absolute inset-0 bg-blue/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                             <a
@@ -618,7 +605,6 @@
                 },
 
                 renderWallpapersAll() {
-                    this.renderWallpapersFilters();
                     this.renderWallpapersSortButtons();
                     this.renderWallpapersGrid();
                 },

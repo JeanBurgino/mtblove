@@ -417,6 +417,22 @@
                 async handleLike(wallpaperId) {
                     const isLiked = this.likedWallpapers.has(wallpaperId);
 
+                    // Update UI immediately (optimistic update)
+                    if (isLiked) {
+                        this.likedWallpapers.delete(wallpaperId);
+                    } else {
+                        this.likedWallpapers.add(wallpaperId);
+                    }
+
+                    // Update the UI elements directly without re-rendering
+                    const heartIcon = document.querySelector(`#heart-${wallpaperId}`);
+                    const likeCount = document.querySelector(`#like-count-${wallpaperId}`);
+
+                    if (heartIcon) {
+                        heartIcon.textContent = isLiked ? '🤍' : '❤️';
+                        heartIcon.className = isLiked ? 'text-2xl transition-all' : 'text-2xl transition-all scale-125';
+                    }
+
                     try {
                         const formData = new FormData();
                         formData.append('action', 'toggle_like');
@@ -430,22 +446,29 @@
 
                         const data = await response.json();
 
-                        // Update liked state
-                        if (isLiked) {
-                            this.likedWallpapers.delete(wallpaperId);
-                        } else {
-                            this.likedWallpapers.add(wallpaperId);
-                        }
-
-                        // Update wallpaper likes
+                        // Update wallpaper likes count
                         const wallpaper = this.wallpapers.find(w => w.id == wallpaperId);
                         if (wallpaper) {
                             wallpaper.likes = data.likes;
                         }
 
-                        this.renderWallpapersGrid();
+                        // Update the like count display
+                        if (likeCount) {
+                            likeCount.textContent = data.likes || 0;
+                            likeCount.className = isLiked ? 'text-sm font-bold text-light/70' : 'text-sm font-bold text-orange';
+                        }
                     } catch (error) {
                         console.error('Like error:', error);
+                        // Revert optimistic update on error
+                        if (isLiked) {
+                            this.likedWallpapers.add(wallpaperId);
+                        } else {
+                            this.likedWallpapers.delete(wallpaperId);
+                        }
+                        if (heartIcon) {
+                            heartIcon.textContent = isLiked ? '❤️' : '🤍';
+                            heartIcon.className = isLiked ? 'text-2xl transition-all scale-125' : 'text-2xl transition-all';
+                        }
                     }
                 },
 
@@ -581,10 +604,10 @@
                                                 class="flex items-center gap-2 group/like transition-all hover:opacity-80"
                                                 title="Like this wallpaper"
                                             >
-                                                <span class="text-2xl transition-all ${isLiked ? 'scale-125' : ''}" style="line-height: 1; display: inline-block; min-width: 24px; min-height: 24px;">
+                                                <span id="heart-${wallpaper.id}" class="text-2xl transition-all ${isLiked ? 'scale-125' : ''}" style="line-height: 1; display: inline-block; min-width: 24px; min-height: 24px;">
                                                     ${isLiked ? '❤️' : '🤍'}
                                                 </span>
-                                                <span class="text-sm font-bold ${isLiked ? 'text-orange' : 'text-light/70'}">
+                                                <span id="like-count-${wallpaper.id}" class="text-sm font-bold ${isLiked ? 'text-orange' : 'text-light/70'}">
                                                     ${wallpaper.likes || 0}
                                                 </span>
                                             </button>

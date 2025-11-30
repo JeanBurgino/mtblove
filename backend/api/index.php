@@ -121,6 +121,17 @@ try {
             getStats();
             break;
 
+        // Social Media Stats Endpoints
+        case 'get_social_stats':
+            require_once __DIR__ . '/social.php';
+            getSocialStats();
+            break;
+
+        case 'update_social_stats':
+            require_once __DIR__ . '/social.php';
+            updateSocialStats();
+            break;
+
         default:
             sendError('Ungültige Aktion', 400);
     }

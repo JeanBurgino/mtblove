@@ -5,7 +5,7 @@
  *
  * Dieser Router leitet Requests weiter:
  * - API Requests → backend/api/index.php
- * - Frontend Requests → frontend/dist/index.html
+ * - Frontend Requests → index.html (Alpine.js App)
  * - Statische Assets → direkt ausliefern
  */
 
@@ -42,8 +42,8 @@ if (strpos($requestPath, '/uploads/') === 0) {
     }
 }
 
-// 3. Statische Frontend-Assets direkt ausliefern
-if (strpos($requestPath, '/frontend/dist/') === 0) {
+// 3. Assets-Verzeichnis direkt ausliefern
+if (strpos($requestPath, '/assets/') === 0) {
     $filePath = __DIR__ . $requestPath;
     if (file_exists($filePath) && is_file($filePath)) {
         // MIME-Type ermitteln
@@ -99,15 +99,15 @@ if ($requestPath !== '/' && $requestPath !== '/index.php') {
     }
 }
 
-// 5. Alle anderen Requests: React Frontend ausliefern
-$frontendIndexPath = __DIR__ . '/frontend/dist/index.html';
+// 5. Alle anderen Requests: Alpine.js Frontend ausliefern
+$frontendIndexPath = __DIR__ . '/index.html';
 
 if (file_exists($frontendIndexPath)) {
     header('Content-Type: text/html; charset=UTF-8');
     readfile($frontendIndexPath);
     exit;
 } else {
-    // Fehler: Frontend nicht gebaut
+    // Fehler: Frontend nicht gefunden
     http_response_code(500);
     header('Content-Type: text/html; charset=UTF-8');
     ?>
@@ -161,18 +161,16 @@ if (file_exists($frontendIndexPath)) {
 
             <div class="status error">
                 <strong>❌ Frontend nicht gefunden</strong><br>
-                Das React Frontend wurde noch nicht gebaut oder deployed.
+                Die Alpine.js App wurde nicht gefunden.
             </div>
 
             <h2>Nächste Schritte:</h2>
 
-            <p>Das Frontend-Verzeichnis wurde nicht gefunden unter:</p>
+            <p>Die index.html wurde nicht gefunden unter:</p>
             <code><?php echo $frontendIndexPath; ?></code>
 
-            <h3>Lösung für Shared Hosting:</h3>
-            <pre>git pull origin claude/fix-mtblove-error-012aULFAyCnrRhQex3YBYCjE</pre>
-
-            <p>Das Repository enthält bereits das gebaute Frontend!</p>
+            <h3>Lösung:</h3>
+            <p>Stellen Sie sicher, dass die index.html Datei im Root-Verzeichnis vorhanden ist.</p>
 
             <h3>Diagnose:</h3>
             <ul>

@@ -9,9 +9,6 @@
     # API Requests an backend/api/index.php weiterleiten
     RewriteRule ^api/(.*)$ backend/api/index.php [L,QSA]
 
-    # Assets aus frontend/dist/assets/ ausliefern
-    RewriteRule ^assets/(.*)$ frontend/dist/assets/$1 [L]
-
     # Logo von Root ausliefern
     RewriteRule ^logo\.(svg|jpg|png)$ logo.$1 [L]
 

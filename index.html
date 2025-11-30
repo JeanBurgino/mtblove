@@ -211,8 +211,13 @@
     </footer>
 
     <script>
+        // Global reference to the app instance
+        let appInstance = null;
+
         function app() {
-            return {
+            if (appInstance) return appInstance;
+
+            appInstance = {
                 currentPage: 'home',
                 mobileMenuOpen: false,
                 isAuthenticated: false,
@@ -639,6 +644,7 @@
 
                 setWallpaperSort(sort) {
                     this.wallpaperSort = sort;
+                    this.renderWallpapersSortButtons();
                     this.renderWallpapersGrid();
                 },
 
@@ -779,7 +785,9 @@
                         </div>
                     `;
                 }
-            }
+            };
+
+            return appInstance;
         }
     </script>
 </body>

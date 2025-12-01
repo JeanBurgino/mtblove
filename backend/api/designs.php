@@ -1,84 +1,11 @@
 <?php
-// ============================================================================
-// MTB Love - Design Shop API
-// ============================================================================
-// Handles CRUD operations for designs, markets, product_types, and variants
-// ============================================================================
+/**
+ * MTB Love - Design Shop API
+ * Handles CRUD operations for designs, markets, product_types, and variants
+ */
 
 require_once __DIR__ . '/../config.php';
-
-// Start session
-startSession();
-
-header('Content-Type: application/json');
-
-// Check if user is authenticated and has admin role
-if (!isset($_SESSION['user_id'])) {
-    http_response_code(401);
-    echo json_encode(['error' => 'Nicht authentifiziert']);
-    exit;
-}
-
-if ($_SESSION['user_role'] !== 'admin' && $_SESSION['user_role'] !== 'editor') {
-    http_response_code(403);
-    echo json_encode(['error' => 'Keine Berechtigung']);
-    exit;
-}
-
-// Get action from request
-$action = $_POST['action'] ?? $_GET['action'] ?? '';
-
-try {
-    switch ($action) {
-        // ========== DESIGNS ==========
-        case 'get_designs':
-            getDesigns();
-            break;
-
-        case 'get_design':
-            getDesign();
-            break;
-
-        case 'add_design':
-            addDesign();
-            break;
-
-        case 'update_design':
-            updateDesign();
-            break;
-
-        case 'delete_design':
-            deleteDesign();
-            break;
-
-        // ========== MARKETS ==========
-        case 'get_markets':
-            getMarkets();
-            break;
-
-        // ========== PRODUCT TYPES ==========
-        case 'get_product_types':
-            getProductTypes();
-            break;
-
-        // ========== VARIANTS ==========
-        case 'get_variants':
-            getVariants();
-            break;
-
-        case 'get_design_variants':
-            getDesignVariants();
-            break;
-
-        default:
-            http_response_code(400);
-            echo json_encode(['error' => 'Ungültige Aktion']);
-            break;
-    }
-} catch (Exception $e) {
-    http_response_code(500);
-    echo json_encode(['error' => 'Server-Fehler: ' . $e->getMessage()]);
-}
+require_once __DIR__ . '/auth.php';
 
 // ============================================================================
 // DESIGN FUNCTIONS
@@ -88,70 +15,77 @@ try {
  * Get all designs
  */
 function getDesigns() {
-    global $pdo;
+    $pdo = getDBConnection();
 
-    $stmt = $pdo->prepare("
-        SELECT d.*,
-               COUNT(v.id) as variant_count
-        FROM designs d
-        LEFT JOIN variants v ON d.id = v.design_id AND v.is_active = 1
-        WHERE d.is_active = 1
-        GROUP BY d.id
-        ORDER BY d.created_at DESC
-    ");
-    $stmt->execute();
-    $designs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    try {
+        $stmt = $pdo->prepare("
+            SELECT d.*,
+                   COUNT(v.id) as variant_count
+            FROM designs d
+            LEFT JOIN variants v ON d.id = v.design_id AND v.is_active = 1
+            WHERE d.is_active = 1
+            GROUP BY d.id
+            ORDER BY d.created_at DESC
+        ");
+        $stmt->execute();
+        $designs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    echo json_encode($designs);
+        sendJSON($designs);
+    } catch (PDOException $e) {
+        error_log('Get designs error: ' . $e->getMessage());
+        sendError('Designs konnten nicht geladen werden', 500);
+    }
 }
 
 /**
  * Get single design with variants
  */
 function getDesign() {
-    global $pdo;
-
+    $pdo = getDBConnection();
     $id = $_GET['id'] ?? null;
 
     if (!$id) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Design ID fehlt']);
-        return;
+        sendError('Design ID fehlt', 400);
     }
 
-    // Get design
-    $stmt = $pdo->prepare("SELECT * FROM designs WHERE id = ? AND is_active = 1");
-    $stmt->execute([$id]);
-    $design = $stmt->fetch(PDO::FETCH_ASSOC);
+    try {
+        // Get design
+        $stmt = $pdo->prepare("SELECT * FROM designs WHERE id = ? AND is_active = 1");
+        $stmt->execute([$id]);
+        $design = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if (!$design) {
-        http_response_code(404);
-        echo json_encode(['error' => 'Design nicht gefunden']);
-        return;
+        if (!$design) {
+            sendError('Design nicht gefunden', 404);
+        }
+
+        // Get variants
+        $stmt = $pdo->prepare("
+            SELECT v.*,
+                   m.country_code, m.country_name,
+                   pt.name as product_type_name, pt.slug as product_type_slug
+            FROM variants v
+            INNER JOIN markets m ON v.market_id = m.id
+            INNER JOIN product_types pt ON v.product_type_id = pt.id
+            WHERE v.design_id = ? AND v.is_active = 1
+            ORDER BY m.display_order, pt.display_order
+        ");
+        $stmt->execute([$id]);
+        $design['variants'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        sendJSON($design);
+    } catch (PDOException $e) {
+        error_log('Get design error: ' . $e->getMessage());
+        sendError('Design konnte nicht geladen werden', 500);
     }
-
-    // Get variants
-    $stmt = $pdo->prepare("
-        SELECT v.*,
-               m.country_code, m.country_name,
-               pt.name as product_type_name, pt.slug as product_type_slug
-        FROM variants v
-        INNER JOIN markets m ON v.market_id = m.id
-        INNER JOIN product_types pt ON v.product_type_id = pt.id
-        WHERE v.design_id = ? AND v.is_active = 1
-        ORDER BY m.display_order, pt.display_order
-    ");
-    $stmt->execute([$id]);
-    $design['variants'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    echo json_encode($design);
 }
 
 /**
  * Add new design with variants
  */
 function addDesign() {
-    global $pdo;
+    requireAuth(['admin', 'editor']);
+
+    $pdo = getDBConnection();
 
     // Validate required fields
     $title = trim($_POST['title'] ?? '');
@@ -160,9 +94,7 @@ function addDesign() {
     $tags = trim($_POST['tags'] ?? '');
 
     if (empty($title)) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Titel ist erforderlich']);
-        return;
+        sendError('Titel ist erforderlich', 400);
     }
 
     // Generate slug from title
@@ -211,7 +143,7 @@ function addDesign() {
 
         $pdo->commit();
 
-        echo json_encode([
+        sendJSON([
             'success' => true,
             'message' => 'Design erfolgreich erstellt',
             'design_id' => $designId,
@@ -220,8 +152,8 @@ function addDesign() {
 
     } catch (Exception $e) {
         $pdo->rollBack();
-        http_response_code(500);
-        echo json_encode(['error' => 'Fehler beim Erstellen: ' . $e->getMessage()]);
+        error_log('Add design error: ' . $e->getMessage());
+        sendError('Fehler beim Erstellen: ' . $e->getMessage(), 500);
     }
 }
 
@@ -229,14 +161,13 @@ function addDesign() {
  * Update design
  */
 function updateDesign() {
-    global $pdo;
+    requireAuth(['admin', 'editor']);
 
+    $pdo = getDBConnection();
     $id = $_POST['id'] ?? null;
 
     if (!$id) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Design ID fehlt']);
-        return;
+        sendError('Design ID fehlt', 400);
     }
 
     $title = trim($_POST['title'] ?? '');
@@ -245,9 +176,7 @@ function updateDesign() {
     $tags = trim($_POST['tags'] ?? '');
 
     if (empty($title)) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Titel ist erforderlich']);
-        return;
+        sendError('Titel ist erforderlich', 400);
     }
 
     try {
@@ -289,15 +218,15 @@ function updateDesign() {
 
         $pdo->commit();
 
-        echo json_encode([
+        sendJSON([
             'success' => true,
             'message' => 'Design erfolgreich aktualisiert'
         ]);
 
     } catch (Exception $e) {
         $pdo->rollBack();
-        http_response_code(500);
-        echo json_encode(['error' => 'Fehler beim Aktualisieren: ' . $e->getMessage()]);
+        error_log('Update design error: ' . $e->getMessage());
+        sendError('Fehler beim Aktualisieren: ' . $e->getMessage(), 500);
     }
 }
 
@@ -305,14 +234,13 @@ function updateDesign() {
  * Delete design (soft delete)
  */
 function deleteDesign() {
-    global $pdo;
+    requireAuth(['admin', 'editor']);
 
+    $pdo = getDBConnection();
     $id = $_POST['id'] ?? null;
 
     if (!$id) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Design ID fehlt']);
-        return;
+        sendError('Design ID fehlt', 400);
     }
 
     try {
@@ -324,14 +252,14 @@ function deleteDesign() {
         $stmt = $pdo->prepare("UPDATE variants SET is_active = 0 WHERE design_id = ?");
         $stmt->execute([$id]);
 
-        echo json_encode([
+        sendJSON([
             'success' => true,
             'message' => 'Design erfolgreich gelöscht'
         ]);
 
-    } catch (Exception $e) {
-        http_response_code(500);
-        echo json_encode(['error' => 'Fehler beim Löschen: ' . $e->getMessage()]);
+    } catch (PDOException $e) {
+        error_log('Delete design error: ' . $e->getMessage());
+        sendError('Fehler beim Löschen: ' . $e->getMessage(), 500);
     }
 }
 
@@ -343,17 +271,22 @@ function deleteDesign() {
  * Get all active markets
  */
 function getMarkets() {
-    global $pdo;
+    $pdo = getDBConnection();
 
-    $stmt = $pdo->prepare("
-        SELECT * FROM markets
-        WHERE is_active = 1
-        ORDER BY display_order
-    ");
-    $stmt->execute();
-    $markets = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    try {
+        $stmt = $pdo->prepare("
+            SELECT * FROM markets
+            WHERE is_active = 1
+            ORDER BY display_order
+        ");
+        $stmt->execute();
+        $markets = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    echo json_encode($markets);
+        sendJSON($markets);
+    } catch (PDOException $e) {
+        error_log('Get markets error: ' . $e->getMessage());
+        sendError('Märkte konnten nicht geladen werden', 500);
+    }
 }
 
 // ============================================================================
@@ -364,17 +297,22 @@ function getMarkets() {
  * Get all active product types
  */
 function getProductTypes() {
-    global $pdo;
+    $pdo = getDBConnection();
 
-    $stmt = $pdo->prepare("
-        SELECT * FROM product_types
-        WHERE is_active = 1
-        ORDER BY display_order
-    ");
-    $stmt->execute();
-    $productTypes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    try {
+        $stmt = $pdo->prepare("
+            SELECT * FROM product_types
+            WHERE is_active = 1
+            ORDER BY display_order
+        ");
+        $stmt->execute();
+        $productTypes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    echo json_encode($productTypes);
+        sendJSON($productTypes);
+    } catch (PDOException $e) {
+        error_log('Get product types error: ' . $e->getMessage());
+        sendError('Produkttypen konnten nicht geladen werden', 500);
+    }
 }
 
 // ============================================================================
@@ -385,38 +323,45 @@ function getProductTypes() {
  * Get all active variants with full details
  */
 function getVariants() {
-    global $pdo;
+    $pdo = getDBConnection();
 
-    $stmt = $pdo->prepare("SELECT * FROM active_variants ORDER BY design_title, country_code, display_order");
-    $stmt->execute();
-    $variants = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    try {
+        $stmt = $pdo->prepare("SELECT * FROM active_variants ORDER BY design_title, country_code, display_order");
+        $stmt->execute();
+        $variants = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    echo json_encode($variants);
+        sendJSON($variants);
+    } catch (PDOException $e) {
+        error_log('Get variants error: ' . $e->getMessage());
+        sendError('Varianten konnten nicht geladen werden', 500);
+    }
 }
 
 /**
  * Get variants for a specific design
  */
 function getDesignVariants() {
-    global $pdo;
-
+    $pdo = getDBConnection();
     $designId = $_GET['design_id'] ?? null;
 
     if (!$designId) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Design ID fehlt']);
-        return;
+        sendError('Design ID fehlt', 400);
     }
 
-    $stmt = $pdo->prepare("
-        SELECT * FROM active_variants
-        WHERE design_id = ?
-        ORDER BY country_code, display_order
-    ");
-    $stmt->execute([$designId]);
-    $variants = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    try {
+        $stmt = $pdo->prepare("
+            SELECT * FROM active_variants
+            WHERE design_id = ?
+            ORDER BY country_code, display_order
+        ");
+        $stmt->execute([$designId]);
+        $variants = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    echo json_encode($variants);
+        sendJSON($variants);
+    } catch (PDOException $e) {
+        error_log('Get design variants error: ' . $e->getMessage());
+        sendError('Design-Varianten konnten nicht geladen werden', 500);
+    }
 }
 
 // ============================================================================

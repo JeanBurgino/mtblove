@@ -252,9 +252,13 @@
                 },
                 // Admin Center State
                 adminCenterTab: 'users',
+                shopTab: 'designs',
                 users: [],
                 products: [],
                 adminWallpapers: [],
+                designs: [],
+                markets: [],
+                productTypes: [],
 
                 init() {
                     // Check authentication
@@ -1600,29 +1604,389 @@
                     const content = document.getElementById('admin-center-content');
                     content.innerHTML = `
                         <div>
-                            <!-- Header with Add Button -->
+                            <!-- Header with Add Buttons -->
                             <div class="flex justify-between items-center mb-6">
                                 <h2 class="text-2xl font-bold text-white">Shop Management</h2>
-                                <button onclick="appInstance.showCreateProductModal()"
-                                    class="px-4 py-2 bg-orange hover:bg-orange-light text-white rounded-lg font-bold transition-colors">
-                                    + Neues Produkt
+                                <div class="flex gap-3">
+                                    <button onclick="appInstance.showCreateDesignModal()"
+                                        class="px-4 py-2 bg-blue hover:bg-blue-dark text-white rounded-lg font-bold transition-colors">
+                                        + Neues Design
+                                    </button>
+                                    <button onclick="appInstance.showCreateProductModal()"
+                                        class="px-4 py-2 bg-orange hover:bg-orange-light text-white rounded-lg font-bold transition-colors">
+                                        + Neues Produkt
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Tabs for Designs and Products -->
+                            <div class="flex gap-2 mb-6 border-b border-light/10">
+                                <button onclick="appInstance.switchShopTab('designs')" id="shop-tab-designs"
+                                    class="px-6 py-3 font-bold border-b-2 transition-colors border-orange text-orange">
+                                    Designs
+                                </button>
+                                <button onclick="appInstance.switchShopTab('products')" id="shop-tab-products"
+                                    class="px-6 py-3 font-bold border-b-2 transition-colors border-transparent text-light/60 hover:text-white">
+                                    Produkte
                                 </button>
                             </div>
 
-                            <!-- Products Grid -->
-                            <div id="admin-products-loading" class="text-center py-12">
-                                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-orange"></div>
-                                <p class="mt-2 text-light/60">Lade Produkte...</p>
+                            <!-- Designs Section -->
+                            <div id="designs-section" class="block">
+                                <div id="admin-designs-loading" class="text-center py-12">
+                                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-orange"></div>
+                                    <p class="mt-2 text-light/60">Lade Designs...</p>
+                                </div>
+                                <div id="admin-designs-grid" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    <!-- Designs will be inserted here -->
+                                </div>
                             </div>
-                            <div id="admin-products-grid" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                <!-- Products will be inserted here -->
+
+                            <!-- Products Section -->
+                            <div id="products-section" class="hidden">
+                                <div id="admin-products-loading" class="text-center py-12">
+                                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-orange"></div>
+                                    <p class="mt-2 text-light/60">Lade Produkte...</p>
+                                </div>
+                                <div id="admin-products-grid" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    <!-- Products will be inserted here -->
+                                </div>
                             </div>
                         </div>
                     `;
 
+                    this.shopTab = 'designs';
+                    await this.loadAdminDesigns();
                     await this.loadAdminProducts();
                 },
 
+                switchShopTab(tab) {
+                    this.shopTab = tab;
+
+                    // Update tab button styles
+                    ['designs', 'products'].forEach(t => {
+                        const btn = document.getElementById(`shop-tab-${t}`);
+                        if (btn) {
+                            if (t === tab) {
+                                btn.className = 'px-6 py-3 font-bold border-b-2 transition-colors border-orange text-orange';
+                            } else {
+                                btn.className = 'px-6 py-3 font-bold border-b-2 transition-colors border-transparent text-light/60 hover:text-white';
+                            }
+                        }
+                    });
+
+                    // Show/hide sections
+                    document.getElementById('designs-section').style.display = tab === 'designs' ? 'block' : 'none';
+                    document.getElementById('products-section').style.display = tab === 'products' ? 'block' : 'none';
+                },
+
+                // ===== DESIGNS MANAGEMENT =====
+                async loadAdminDesigns() {
+                    try {
+                        const formData = new FormData();
+                        formData.append('action', 'get_designs');
+
+                        const response = await fetch(this.API_URL, {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        this.designs = await response.json();
+                        this.renderAdminDesigns();
+
+                        document.getElementById('admin-designs-loading').classList.add('hidden');
+                        document.getElementById('admin-designs-grid').classList.remove('hidden');
+                    } catch (error) {
+                        console.error('Error loading designs:', error);
+                        document.getElementById('admin-designs-loading').innerHTML = '<p class="text-red-500">Fehler beim Laden der Designs</p>';
+                    }
+                },
+
+                renderAdminDesigns() {
+                    const grid = document.getElementById('admin-designs-grid');
+                    if (!grid) return;
+
+                    if (this.designs.length === 0) {
+                        grid.innerHTML = '<div class="col-span-full text-center py-12 text-light/60">Noch keine Designs vorhanden</div>';
+                        return;
+                    }
+
+                    grid.innerHTML = this.designs.map(design => `
+                        <div class="bg-dark-700 border border-light/10 rounded-xl overflow-hidden hover:border-blue/50 transition-all">
+                            <div class="aspect-square bg-dark-800 relative">
+                                ${design.mockup_image_url ?
+                                    `<img src="${design.mockup_image_url}" alt="${design.title}" class="w-full h-full object-cover">` :
+                                    '<div class="w-full h-full flex items-center justify-center text-light/40 text-4xl">🎨</div>'
+                                }
+                            </div>
+                            <div class="p-4">
+                                <h3 class="font-bold text-white mb-2 truncate">${design.title}</h3>
+                                <p class="text-sm text-light/60 mb-2 line-clamp-2">${design.description || '-'}</p>
+                                <div class="flex items-center justify-between mb-3 text-xs text-light/60">
+                                    <span>Slug: ${design.slug}</span>
+                                    <span class="px-2 py-1 rounded bg-blue/20 text-blue">${design.variant_count || 0} Varianten</span>
+                                </div>
+                                ${design.tags ? `<div class="mb-3 text-xs text-light/60">Tags: ${design.tags}</div>` : ''}
+                                <div class="flex gap-2">
+                                    <button onclick="appInstance.showEditDesignModal(${design.id})"
+                                        class="flex-1 px-3 py-1.5 bg-blue/20 hover:bg-blue/30 text-blue rounded-lg text-sm font-bold transition-colors">
+                                        Bearbeiten
+                                    </button>
+                                    <button onclick="appInstance.confirmDeleteDesign(${design.id}, '${design.title.replace(/'/g, "\\'")}')"
+                                        class="flex-1 px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-500 rounded-lg text-sm font-bold transition-colors">
+                                        Löschen
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                },
+
+                async showCreateDesignModal() {
+                    // Load markets and product types first
+                    await this.loadMarketsAndProductTypes();
+
+                    const modal = document.createElement('div');
+                    modal.className = 'fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 overflow-y-auto';
+                    modal.innerHTML = `
+                        <div class="bg-dark-700 border border-light/10 rounded-xl p-6 max-w-4xl w-full my-8">
+                            <h3 class="text-xl font-bold text-white mb-4">Neues Design</h3>
+                            <form id="create-design-form" class="space-y-6">
+                                <!-- Basic Information -->
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-bold text-light mb-2">Title *</label>
+                                        <input type="text" name="title" required
+                                            class="w-full px-4 py-2 bg-dark-800 border border-light/10 rounded-lg text-white focus:outline-none focus:border-orange">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-bold text-light mb-2">Mockup Image URL</label>
+                                        <input type="text" name="mockup_image_url"
+                                            placeholder="https://example.com/image.jpg"
+                                            class="w-full px-4 py-2 bg-dark-800 border border-light/10 rounded-lg text-white focus:outline-none focus:border-orange">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-bold text-light mb-2">Description</label>
+                                        <textarea name="description" rows="3"
+                                            class="w-full px-4 py-2 bg-dark-800 border border-light/10 rounded-lg text-white focus:outline-none focus:border-orange"></textarea>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-bold text-light mb-2">Tags (komma-getrennt)</label>
+                                        <input type="text" name="tags" placeholder="vintage, cat, dad, funny"
+                                            class="w-full px-4 py-2 bg-dark-800 border border-light/10 rounded-lg text-white focus:outline-none focus:border-orange">
+                                    </div>
+                                </div>
+
+                                <!-- Markets Selection -->
+                                <div>
+                                    <label class="block text-sm font-bold text-light mb-3">Märkte auswählen:</label>
+                                    <div class="space-y-2" id="markets-checkboxes">
+                                        ${this.markets.map(market => `
+                                            <label class="flex items-center gap-2 cursor-pointer p-2 hover:bg-dark-800 rounded">
+                                                <input type="checkbox" value="${market.id}" data-country="${market.country_code}"
+                                                    onchange="appInstance.updateVariantFields()"
+                                                    class="w-4 h-4 bg-dark-800 border border-light/10 rounded focus:ring-orange market-checkbox">
+                                                <span class="text-sm text-light">${market.country_name} (${market.country_code}) - ${market.currency_symbol}</span>
+                                            </label>
+                                        `).join('')}
+                                    </div>
+                                </div>
+
+                                <!-- Product Types Selection -->
+                                <div>
+                                    <label class="block text-sm font-bold text-light mb-3">Produkttypen auswählen:</label>
+                                    <div class="space-y-2" id="product-types-checkboxes">
+                                        ${this.productTypes.map(pt => `
+                                            <label class="flex items-center gap-2 cursor-pointer p-2 hover:bg-dark-800 rounded">
+                                                <input type="checkbox" value="${pt.id}" data-name="${pt.name}"
+                                                    onchange="appInstance.updateVariantFields()"
+                                                    class="w-4 h-4 bg-dark-800 border border-light/10 rounded focus:ring-orange product-type-checkbox">
+                                                <span class="text-sm text-light">${pt.name}</span>
+                                            </label>
+                                        `).join('')}
+                                    </div>
+                                </div>
+
+                                <!-- Variant ASIN Fields (dynamically generated) -->
+                                <div id="variant-fields" class="space-y-4">
+                                    <label class="block text-sm font-bold text-light">ASINs für Kombinationen:</label>
+                                    <div id="variant-inputs" class="space-y-3">
+                                        <p class="text-sm text-light/60">Wählen Sie Märkte und Produkttypen aus, um ASIN-Felder anzuzeigen.</p>
+                                    </div>
+                                </div>
+
+                                <!-- Submit Buttons -->
+                                <div class="flex gap-3 pt-4 border-t border-light/10">
+                                    <button type="submit"
+                                        class="flex-1 px-4 py-2 bg-orange hover:bg-orange-light text-white rounded-lg font-bold transition-colors">
+                                        Design erstellen
+                                    </button>
+                                    <button type="button" onclick="this.closest('.fixed').remove()"
+                                        class="flex-1 px-4 py-2 bg-dark-800 hover:bg-dark-700 text-light rounded-lg font-bold transition-colors">
+                                        Abbrechen
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    `;
+
+                    document.body.appendChild(modal);
+
+                    modal.querySelector('form').addEventListener('submit', async (e) => {
+                        e.preventDefault();
+                        await this.submitDesignForm(e.target, modal);
+                    });
+                },
+
+                async loadMarketsAndProductTypes() {
+                    try {
+                        // Load markets
+                        const marketsFormData = new FormData();
+                        marketsFormData.append('action', 'get_markets');
+                        const marketsResponse = await fetch(this.API_URL, {
+                            method: 'POST',
+                            body: marketsFormData
+                        });
+                        this.markets = await marketsResponse.json();
+
+                        // Load product types
+                        const ptFormData = new FormData();
+                        ptFormData.append('action', 'get_product_types');
+                        const ptResponse = await fetch(this.API_URL, {
+                            method: 'POST',
+                            body: ptFormData
+                        });
+                        this.productTypes = await ptResponse.json();
+                    } catch (error) {
+                        console.error('Error loading markets/product types:', error);
+                        alert('Fehler beim Laden der Märkte und Produkttypen');
+                    }
+                },
+
+                updateVariantFields() {
+                    const selectedMarkets = Array.from(document.querySelectorAll('.market-checkbox:checked'));
+                    const selectedProductTypes = Array.from(document.querySelectorAll('.product-type-checkbox:checked'));
+                    const variantInputsContainer = document.getElementById('variant-inputs');
+
+                    if (selectedMarkets.length === 0 || selectedProductTypes.length === 0) {
+                        variantInputsContainer.innerHTML = '<p class="text-sm text-light/60">Wählen Sie Märkte und Produkttypen aus, um ASIN-Felder anzuzeigen.</p>';
+                        return;
+                    }
+
+                    let html = '';
+                    selectedMarkets.forEach(marketCheckbox => {
+                        const marketId = marketCheckbox.value;
+                        const countryCode = marketCheckbox.dataset.country;
+
+                        selectedProductTypes.forEach(ptCheckbox => {
+                            const ptId = ptCheckbox.value;
+                            const ptName = ptCheckbox.dataset.name;
+                            const fieldId = `variant-${marketId}-${ptId}`;
+
+                            html += `
+                                <div class="grid grid-cols-12 gap-3 items-end">
+                                    <div class="col-span-5">
+                                        <label class="block text-xs text-light/60 mb-1">${countryCode} - ${ptName}</label>
+                                    </div>
+                                    <div class="col-span-5">
+                                        <input type="text" id="${fieldId}"
+                                            placeholder="ASIN (z.B. B08XYZ123)"
+                                            data-market-id="${marketId}" data-pt-id="${ptId}"
+                                            class="variant-asin-input w-full px-3 py-2 bg-dark-800 border border-light/10 rounded-lg text-white text-sm focus:outline-none focus:border-blue">
+                                    </div>
+                                    <div class="col-span-2">
+                                        <input type="number" step="0.01" placeholder="Preis"
+                                            data-market-id="${marketId}" data-pt-id="${ptId}"
+                                            class="variant-price-input w-full px-3 py-2 bg-dark-800 border border-light/10 rounded-lg text-white text-sm focus:outline-none focus:border-blue">
+                                    </div>
+                                </div>
+                            `;
+                        });
+                    });
+
+                    variantInputsContainer.innerHTML = html;
+                },
+
+                async submitDesignForm(form, modal) {
+                    const formData = new FormData(form);
+                    formData.append('action', 'add_design');
+
+                    // Collect variants
+                    const variants = [];
+                    const asinInputs = document.querySelectorAll('.variant-asin-input');
+                    asinInputs.forEach(input => {
+                        const asin = input.value.trim();
+                        if (asin) {
+                            const priceInput = document.querySelector(`.variant-price-input[data-market-id="${input.dataset.marketId}"][data-pt-id="${input.dataset.ptId}"]`);
+                            variants.push({
+                                market_id: input.dataset.marketId,
+                                product_type_id: input.dataset.ptId,
+                                asin: asin,
+                                price: priceInput.value || null
+                            });
+                        }
+                    });
+
+                    formData.append('variants', JSON.stringify(variants));
+
+                    try {
+                        const response = await fetch(this.API_URL, {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        const result = await response.json();
+
+                        if (result.success) {
+                            modal.remove();
+                            await this.loadAdminDesigns();
+                            alert('Design erfolgreich erstellt!');
+                        } else {
+                            alert(result.error || 'Fehler beim Erstellen des Designs');
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        alert('Fehler beim Erstellen des Designs');
+                    }
+                },
+
+                confirmDeleteDesign(designId, title) {
+                    if (confirm(`Möchten Sie das Design "${title}" wirklich löschen?`)) {
+                        this.deleteDesign(designId);
+                    }
+                },
+
+                async deleteDesign(designId) {
+                    try {
+                        const formData = new FormData();
+                        formData.append('action', 'delete_design');
+                        formData.append('id', designId);
+
+                        const response = await fetch(this.API_URL, {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        const result = await response.json();
+
+                        if (result.success) {
+                            await this.loadAdminDesigns();
+                            alert('Design erfolgreich gelöscht!');
+                        } else {
+                            alert(result.error || 'Fehler beim Löschen des Designs');
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        alert('Fehler beim Löschen des Designs');
+                    }
+                },
+
+                async showEditDesignModal(designId) {
+                    // TODO: Implement edit design modal
+                    alert('Design bearbeiten kommt bald!');
+                },
+
+                // ===== PRODUCTS MANAGEMENT =====
                 async loadAdminProducts() {
                     try {
                         const formData = new FormData();

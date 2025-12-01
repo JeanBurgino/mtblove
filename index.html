@@ -240,6 +240,7 @@
                 mobileMenuOpen: false,
                 isAuthenticated: false,
                 user: null,
+                authToken: localStorage.getItem('authToken') || null,
                 API_URL: '/backend/api/index.php',
                 wallpapers: [],
                 wallpaperFilter: 'all',
@@ -279,6 +280,10 @@
                         const formData = new FormData();
                         formData.append('action', 'check_auth');
 
+                        if (this.authToken) {
+                            formData.append('token', this.authToken);
+                        }
+
                         const response = await fetch(this.API_URL, {
                             method: 'POST',
                             body: formData
@@ -287,6 +292,12 @@
                         const data = await response.json();
                         this.isAuthenticated = data.authenticated || false;
                         this.user = data.user || null;
+
+                        // If not authenticated, clear token
+                        if (!data.authenticated && this.authToken) {
+                            this.authToken = null;
+                            localStorage.removeItem('authToken');
+                        }
                     } catch (error) {
                         console.error('Auth check error:', error);
                     }
@@ -381,13 +392,21 @@
                         const formData = new FormData();
                         formData.append('action', 'logout');
 
+                        if (this.authToken) {
+                            formData.append('token', this.authToken);
+                        }
+
                         await fetch(this.API_URL, {
                             method: 'POST',
                             body: formData
                         });
 
+                        // Clear authentication state
                         this.isAuthenticated = false;
                         this.user = null;
+                        this.authToken = null;
+                        localStorage.removeItem('authToken');
+
                         this.navigateTo('home');
                     } catch (error) {
                         console.error('Logout error:', error);
@@ -857,15 +876,29 @@
 
                             const data = await response.json();
 
-                            if (data.success) {
-                                await this.checkAuth();
-                                this.navigateTo('admin');
+                            if (data.success && data.token) {
+                                // Store token
+                                this.authToken = data.token;
+                                localStorage.setItem('authToken', data.token);
+
+                                // Update authentication state
+                                this.isAuthenticated = true;
+                                this.user = data.user;
+
+                                // Navigate to admin center if user is admin, otherwise to admin page
+                                if (data.user.role === 'admin') {
+                                    this.navigateTo('admincenter');
+                                } else {
+                                    this.navigateTo('admin');
+                                }
                             } else {
                                 document.getElementById('login-error').textContent = data.error || 'Login failed';
                                 document.getElementById('login-error').classList.remove('hidden');
                             }
                         } catch (error) {
                             console.error('Login error:', error);
+                            document.getElementById('login-error').textContent = 'Connection error';
+                            document.getElementById('login-error').classList.remove('hidden');
                         }
                     });
                 },

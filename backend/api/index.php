@@ -132,6 +132,37 @@ try {
             updateSocialStats();
             break;
 
+        // User Management Endpoints
+        case 'get_users':
+            require_once __DIR__ . '/users.php';
+            getUsers();
+            break;
+
+        case 'get_user':
+            require_once __DIR__ . '/users.php';
+            getUser();
+            break;
+
+        case 'create_user':
+            require_once __DIR__ . '/users.php';
+            createUser();
+            break;
+
+        case 'update_user':
+            require_once __DIR__ . '/users.php';
+            updateUser();
+            break;
+
+        case 'change_password':
+            require_once __DIR__ . '/users.php';
+            changePassword();
+            break;
+
+        case 'delete_user':
+            require_once __DIR__ . '/users.php';
+            deleteUser();
+            break;
+
         default:
             sendError('Ungültige Aktion', 400);
     }

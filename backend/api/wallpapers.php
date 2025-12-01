@@ -116,8 +116,8 @@ function addWallpaper() {
 
     try {
         $stmt = $pdo->prepare("
-            INSERT INTO wallpapers (title, description, style, filename, file_path, file_size, width, height, type)
-            VALUES (:title, :description, :style, :filename, :filepath, :filesize, :width, :height, :type)
+            INSERT INTO wallpapers (title, description, style, filename, file_path, thumbnail_path, file_size, width, height, type)
+            VALUES (:title, :description, :style, :filename, :filepath, :thumbnailpath, :filesize, :width, :height, :type)
         ");
 
         $stmt->execute([
@@ -126,6 +126,7 @@ function addWallpaper() {
             'style' => $style,
             'filename' => $filename,
             'filepath' => $filepath,
+            'thumbnailpath' => $filepath, // Use same path as file_path for now
             'filesize' => $filesize,
             'width' => $width,
             'height' => $height,

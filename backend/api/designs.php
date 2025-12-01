@@ -5,8 +5,12 @@
 // Handles CRUD operations for designs, markets, product_types, and variants
 // ============================================================================
 
-header('Content-Type: application/json');
 require_once __DIR__ . '/../config.php';
+
+// Start session
+startSession();
+
+header('Content-Type: application/json');
 
 // Check if user is authenticated and has admin role
 if (!isset($_SESSION['user_id'])) {

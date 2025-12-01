@@ -1364,8 +1364,8 @@
                     grid.innerHTML = this.adminWallpapers.map(wallpaper => `
                         <div class="bg-dark-700 border border-light/10 rounded-xl overflow-hidden hover:border-orange/50 transition-all">
                             <div class="aspect-video bg-dark-800 relative">
-                                ${wallpaper.thumbnail_path ?
-                                    `<img src="${wallpaper.thumbnail_path}" alt="${wallpaper.title}" class="w-full h-full object-cover">` :
+                                ${(wallpaper.thumbnail_path || wallpaper.file_path) ?
+                                    `<img src="${wallpaper.thumbnail_path || wallpaper.file_path}" alt="${wallpaper.title}" class="w-full h-full object-cover">` :
                                     '<div class="w-full h-full flex items-center justify-center text-light/40 text-4xl">🖼️</div>'
                                 }
                             </div>

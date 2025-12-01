@@ -90,11 +90,43 @@ function addDesign() {
     // Validate required fields
     $title = trim($_POST['title'] ?? '');
     $description = trim($_POST['description'] ?? '');
-    $mockup_image_url = trim($_POST['mockup_image_url'] ?? '');
     $tags = trim($_POST['tags'] ?? '');
 
     if (empty($title)) {
         sendError('Titel ist erforderlich', 400);
+    }
+
+    // Handle file upload
+    $mockup_image_url = '';
+    if (isset($_FILES['mockup_image']) && $_FILES['mockup_image']['error'] === UPLOAD_ERR_OK) {
+        $file = $_FILES['mockup_image'];
+
+        // Validate file type
+        if (!in_array($file['type'], ALLOWED_IMAGE_TYPES)) {
+            sendError('Ungültiger Dateityp. Nur JPEG, PNG, GIF und WebP sind erlaubt.', 400);
+        }
+
+        // Validate file size
+        if ($file['size'] > MAX_FILE_SIZE) {
+            sendError('Datei zu groß (max 5MB)', 400);
+        }
+
+        // Create unique filename
+        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $filename = 'design_' . time() . '_' . uniqid() . '.' . $extension;
+        $uploadPath = UPLOAD_DIR . 'designs/' . $filename;
+
+        // Create directory if it doesn't exist
+        if (!file_exists(UPLOAD_DIR . 'designs/')) {
+            mkdir(UPLOAD_DIR . 'designs/', 0755, true);
+        }
+
+        // Move uploaded file
+        if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
+            $mockup_image_url = '/uploads/designs/' . $filename;
+        } else {
+            sendError('Fehler beim Hochladen der Datei', 500);
+        }
     }
 
     // Generate slug from title
@@ -172,11 +204,53 @@ function updateDesign() {
 
     $title = trim($_POST['title'] ?? '');
     $description = trim($_POST['description'] ?? '');
-    $mockup_image_url = trim($_POST['mockup_image_url'] ?? '');
     $tags = trim($_POST['tags'] ?? '');
 
     if (empty($title)) {
         sendError('Titel ist erforderlich', 400);
+    }
+
+    // Get current design to check for existing image
+    $stmt = $pdo->prepare("SELECT mockup_image_url FROM designs WHERE id = ?");
+    $stmt->execute([$id]);
+    $currentDesign = $stmt->fetch(PDO::FETCH_ASSOC);
+    $mockup_image_url = $currentDesign['mockup_image_url'];
+
+    // Handle file upload (if new file is provided)
+    if (isset($_FILES['mockup_image']) && $_FILES['mockup_image']['error'] === UPLOAD_ERR_OK) {
+        $file = $_FILES['mockup_image'];
+
+        // Validate file type
+        if (!in_array($file['type'], ALLOWED_IMAGE_TYPES)) {
+            sendError('Ungültiger Dateityp. Nur JPEG, PNG, GIF und WebP sind erlaubt.', 400);
+        }
+
+        // Validate file size
+        if ($file['size'] > MAX_FILE_SIZE) {
+            sendError('Datei zu groß (max 5MB)', 400);
+        }
+
+        // Delete old image if it exists
+        if (!empty($mockup_image_url) && file_exists($_SERVER['DOCUMENT_ROOT'] . $mockup_image_url)) {
+            unlink($_SERVER['DOCUMENT_ROOT'] . $mockup_image_url);
+        }
+
+        // Create unique filename
+        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $filename = 'design_' . time() . '_' . uniqid() . '.' . $extension;
+        $uploadPath = UPLOAD_DIR . 'designs/' . $filename;
+
+        // Create directory if it doesn't exist
+        if (!file_exists(UPLOAD_DIR . 'designs/')) {
+            mkdir(UPLOAD_DIR . 'designs/', 0755, true);
+        }
+
+        // Move uploaded file
+        if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
+            $mockup_image_url = '/uploads/designs/' . $filename;
+        } else {
+            sendError('Fehler beim Hochladen der Datei', 500);
+        }
     }
 
     try {

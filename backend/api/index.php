@@ -6,6 +6,9 @@
 
 require_once __DIR__ . '/../config.php';
 
+// Start session before any output
+startSession();
+
 // CORS Headers
 header('Access-Control-Allow-Origin: ' . CORS_ALLOWED_ORIGINS);
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');

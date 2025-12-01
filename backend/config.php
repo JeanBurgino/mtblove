@@ -122,6 +122,10 @@ function isAuthenticated() {
  */
 if (!is_dir(UPLOAD_DIR)) {
     mkdir(UPLOAD_DIR, 0755, true);
+}
+if (!is_dir(UPLOAD_DIR . 'wallpapers/')) {
     mkdir(UPLOAD_DIR . 'wallpapers/', 0755, true);
+}
+if (!is_dir(UPLOAD_DIR . 'products/')) {
     mkdir(UPLOAD_DIR . 'products/', 0755, true);
 }

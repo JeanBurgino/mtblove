@@ -106,6 +106,19 @@ try {
             deleteProduct();
             break;
 
+        // Design Shop Endpoints
+        case 'get_designs':
+        case 'get_design':
+        case 'add_design':
+        case 'update_design':
+        case 'delete_design':
+        case 'get_markets':
+        case 'get_product_types':
+        case 'get_variants':
+        case 'get_design_variants':
+            require_once __DIR__ . '/designs.php';
+            break;
+
         // Excuse Endpoints
         case 'get_random_excuse':
             require_once __DIR__ . '/excuses.php';

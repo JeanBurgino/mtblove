@@ -1,0 +1,43 @@
+-- =============================================
+-- MTB Love - Fix Admin Password
+-- =============================================
+-- This script resets the admin password to: admin123
+-- =============================================
+
+USE mtblove;
+
+-- Update admin user password
+-- Password: admin123
+UPDATE users
+SET password_hash = '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi'
+WHERE username = 'admin';
+
+-- Verify the update
+SELECT
+    id,
+    username,
+    email,
+    role,
+    created_at,
+    last_login
+FROM users
+WHERE username = 'admin';
+
+-- =============================================
+-- USAGE
+-- =============================================
+-- Run with: mysql -u mtblove_admin -p mtblove < backend/fix_admin_password.sql
+--
+-- =============================================
+-- NEW CREDENTIALS
+-- =============================================
+-- Username: admin
+-- Password: admin123
+--
+-- =============================================
+-- TEST LOGIN
+-- =============================================
+-- curl -X POST https://mtblove.com/backend/api/index.php \
+--   -d "action=login" \
+--   -d "user=admin" \
+--   -d "pass=admin123"

@@ -58,7 +58,7 @@ function updateSocialStats() {
             $stmt = $pdo->prepare("
                 INSERT INTO stats (stat_key, stat_value)
                 VALUES ('instagram_followers', :value)
-                ON DUPLICATE KEY UPDATE stat_value = :value
+                ON DUPLICATE KEY UPDATE stat_value = VALUES(stat_value)
             ");
             $stmt->execute(['value' => intval($instagram)]);
         }
@@ -68,7 +68,7 @@ function updateSocialStats() {
             $stmt = $pdo->prepare("
                 INSERT INTO stats (stat_key, stat_value)
                 VALUES ('tiktok_followers', :value)
-                ON DUPLICATE KEY UPDATE stat_value = :value
+                ON DUPLICATE KEY UPDATE stat_value = VALUES(stat_value)
             ");
             $stmt->execute(['value' => intval($tiktok)]);
         }

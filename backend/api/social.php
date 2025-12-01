@@ -83,8 +83,11 @@ function updateSocialStats() {
         ]);
 
     } catch (PDOException $e) {
-        $pdo->rollBack();
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
         error_log('Update social stats error: ' . $e->getMessage());
-        sendError('Social stats konnten nicht aktualisiert werden', 500);
+        error_log('Update social stats trace: ' . $e->getTraceAsString());
+        sendError('Social stats konnten nicht aktualisiert werden: ' . $e->getMessage(), 500);
     }
 }

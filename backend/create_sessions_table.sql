@@ -7,7 +7,7 @@
 
 USE mtblove;
 
--- Create sessions table
+-- Create sessions table (without foreign key for compatibility)
 CREATE TABLE IF NOT EXISTS `sessions` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `user_id` INT UNSIGNED NOT NULL,
@@ -16,10 +16,16 @@ CREATE TABLE IF NOT EXISTS `sessions` (
     `user_agent` VARCHAR(500),
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `expires_at` TIMESTAMP NOT NULL,
-    FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+    INDEX `idx_user_id` (`user_id`),
     INDEX `idx_token` (`token`),
     INDEX `idx_expires` (`expires_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Optional: Add foreign key constraint if users table exists with correct structure
+-- Uncomment the following lines if you want to add the foreign key later:
+-- ALTER TABLE sessions
+-- ADD CONSTRAINT fk_sessions_user_id
+-- FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
 -- Verify table was created
 DESCRIBE sessions;

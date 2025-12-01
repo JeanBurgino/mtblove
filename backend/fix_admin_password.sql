@@ -8,8 +8,9 @@ USE mtblove;
 
 -- Update admin user password
 -- Password: admin123
+-- Hash generated and verified by test_login.php
 UPDATE users
-SET password_hash = '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi'
+SET password_hash = '$2y$12$pPRZl.9pbOtN/J0V.gXzh.wd6iMEgPrdTZNQV0UmFlBtUJCGidS4S'
 WHERE username = 'admin';
 
 -- Verify the update

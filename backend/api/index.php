@@ -108,15 +108,48 @@ try {
 
         // Design Shop Endpoints
         case 'get_designs':
+            require_once __DIR__ . '/designs.php';
+            getDesigns();
+            break;
+
         case 'get_design':
+            require_once __DIR__ . '/designs.php';
+            getDesign();
+            break;
+
         case 'add_design':
+            require_once __DIR__ . '/designs.php';
+            addDesign();
+            break;
+
         case 'update_design':
+            require_once __DIR__ . '/designs.php';
+            updateDesign();
+            break;
+
         case 'delete_design':
+            require_once __DIR__ . '/designs.php';
+            deleteDesign();
+            break;
+
         case 'get_markets':
+            require_once __DIR__ . '/designs.php';
+            getMarkets();
+            break;
+
         case 'get_product_types':
+            require_once __DIR__ . '/designs.php';
+            getProductTypes();
+            break;
+
         case 'get_variants':
+            require_once __DIR__ . '/designs.php';
+            getVariants();
+            break;
+
         case 'get_design_variants':
             require_once __DIR__ . '/designs.php';
+            getDesignVariants();
             break;
 
         // Excuse Endpoints

@@ -252,9 +252,7 @@
                 },
                 // Admin Center State
                 adminCenterTab: 'users',
-                shopTab: 'designs',
                 users: [],
-                products: [],
                 adminWallpapers: [],
                 designs: [],
                 markets: [],
@@ -1604,80 +1602,27 @@
                     const content = document.getElementById('admin-center-content');
                     content.innerHTML = `
                         <div>
-                            <!-- Header with Add Buttons -->
+                            <!-- Header with Add Button -->
                             <div class="flex justify-between items-center mb-6">
-                                <h2 class="text-2xl font-bold text-white">Shop Management</h2>
-                                <div class="flex gap-3">
-                                    <button onclick="appInstance.showCreateDesignModal()"
-                                        class="px-4 py-2 bg-blue hover:bg-blue-dark text-white rounded-lg font-bold transition-colors">
-                                        + Neues Design
-                                    </button>
-                                    <button onclick="appInstance.showCreateProductModal()"
-                                        class="px-4 py-2 bg-orange hover:bg-orange-light text-white rounded-lg font-bold transition-colors">
-                                        + Neues Produkt
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Tabs for Designs and Products -->
-                            <div class="flex gap-2 mb-6 border-b border-light/10">
-                                <button onclick="appInstance.switchShopTab('designs')" id="shop-tab-designs"
-                                    class="px-6 py-3 font-bold border-b-2 transition-colors border-orange text-orange">
-                                    Designs
-                                </button>
-                                <button onclick="appInstance.switchShopTab('products')" id="shop-tab-products"
-                                    class="px-6 py-3 font-bold border-b-2 transition-colors border-transparent text-light/60 hover:text-white">
-                                    Produkte
+                                <h2 class="text-2xl font-bold text-white">Design Management</h2>
+                                <button onclick="appInstance.showCreateDesignModal()"
+                                    class="px-4 py-2 bg-orange hover:bg-orange-light text-white rounded-lg font-bold transition-colors">
+                                    + Neues Design
                                 </button>
                             </div>
 
-                            <!-- Designs Section -->
-                            <div id="designs-section" class="block">
-                                <div id="admin-designs-loading" class="text-center py-12">
-                                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-orange"></div>
-                                    <p class="mt-2 text-light/60">Lade Designs...</p>
-                                </div>
-                                <div id="admin-designs-grid" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    <!-- Designs will be inserted here -->
-                                </div>
+                            <!-- Designs Grid -->
+                            <div id="admin-designs-loading" class="text-center py-12">
+                                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-orange"></div>
+                                <p class="mt-2 text-light/60">Lade Designs...</p>
                             </div>
-
-                            <!-- Products Section -->
-                            <div id="products-section" class="hidden">
-                                <div id="admin-products-loading" class="text-center py-12">
-                                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-orange"></div>
-                                    <p class="mt-2 text-light/60">Lade Produkte...</p>
-                                </div>
-                                <div id="admin-products-grid" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    <!-- Products will be inserted here -->
-                                </div>
+                            <div id="admin-designs-grid" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                <!-- Designs will be inserted here -->
                             </div>
                         </div>
                     `;
 
-                    this.shopTab = 'designs';
                     await this.loadAdminDesigns();
-                    await this.loadAdminProducts();
-                },
-
-                switchShopTab(tab) {
-                    this.shopTab = tab;
-
-                    // Update tab button styles
-                    ['designs', 'products'].forEach(t => {
-                        const btn = document.getElementById(`shop-tab-${t}`);
-                        if (btn) {
-                            if (t === tab) {
-                                btn.className = 'px-6 py-3 font-bold border-b-2 transition-colors border-orange text-orange';
-                            } else {
-                                btn.className = 'px-6 py-3 font-bold border-b-2 transition-colors border-transparent text-light/60 hover:text-white';
-                            }
-                        }
-                    });
-
-                    // Show/hide sections
-                    document.getElementById('designs-section').style.display = tab === 'designs' ? 'block' : 'none';
-                    document.getElementById('products-section').style.display = tab === 'products' ? 'block' : 'none';
                 },
 
                 // ===== DESIGNS MANAGEMENT =====

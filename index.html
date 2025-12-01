@@ -916,24 +916,20 @@
 
                             <!-- Tabs -->
                             <div class="flex gap-2 mb-8 border-b border-light/10 overflow-x-auto">
-                                <button @click="adminCenterTab = 'users'"
-                                    :class="adminCenterTab === 'users' ? 'border-orange text-orange' : 'border-transparent text-light/60 hover:text-white'"
-                                    class="px-6 py-3 font-bold border-b-2 transition-colors whitespace-nowrap">
+                                <button onclick="appInstance.switchAdminTab('users')" id="tab-users"
+                                    class="px-6 py-3 font-bold border-b-2 transition-colors whitespace-nowrap border-orange text-orange">
                                     User Management
                                 </button>
-                                <button @click="adminCenterTab = 'gallery'"
-                                    :class="adminCenterTab === 'gallery' ? 'border-orange text-orange' : 'border-transparent text-light/60 hover:text-white'"
-                                    class="px-6 py-3 font-bold border-b-2 transition-colors whitespace-nowrap">
+                                <button onclick="appInstance.switchAdminTab('gallery')" id="tab-gallery"
+                                    class="px-6 py-3 font-bold border-b-2 transition-colors whitespace-nowrap border-transparent text-light/60 hover:text-white">
                                     Gallery Management
                                 </button>
-                                <button @click="adminCenterTab = 'shop'"
-                                    :class="adminCenterTab === 'shop' ? 'border-orange text-orange' : 'border-transparent text-light/60 hover:text-white'"
-                                    class="px-6 py-3 font-bold border-b-2 transition-colors whitespace-nowrap">
+                                <button onclick="appInstance.switchAdminTab('shop')" id="tab-shop"
+                                    class="px-6 py-3 font-bold border-b-2 transition-colors whitespace-nowrap border-transparent text-light/60 hover:text-white">
                                     Shop Management
                                 </button>
-                                <button @click="adminCenterTab = 'config'"
-                                    :class="adminCenterTab === 'config' ? 'border-orange text-orange' : 'border-transparent text-light/60 hover:text-white'"
-                                    class="px-6 py-3 font-bold border-b-2 transition-colors whitespace-nowrap">
+                                <button onclick="appInstance.switchAdminTab('config')" id="tab-config"
+                                    class="px-6 py-3 font-bold border-b-2 transition-colors whitespace-nowrap border-transparent text-light/60 hover:text-white">
                                     Config
                                 </button>
                             </div>
@@ -947,11 +943,25 @@
 
                     // Load initial tab content
                     this.loadAdminCenterTab();
+                },
 
-                    // Watch for tab changes
-                    this.$watch('adminCenterTab', () => {
-                        this.loadAdminCenterTab();
+                switchAdminTab(tab) {
+                    this.adminCenterTab = tab;
+
+                    // Update tab button styles
+                    ['users', 'gallery', 'shop', 'config'].forEach(t => {
+                        const btn = document.getElementById(`tab-${t}`);
+                        if (btn) {
+                            if (t === tab) {
+                                btn.className = 'px-6 py-3 font-bold border-b-2 transition-colors whitespace-nowrap border-orange text-orange';
+                            } else {
+                                btn.className = 'px-6 py-3 font-bold border-b-2 transition-colors whitespace-nowrap border-transparent text-light/60 hover:text-white';
+                            }
+                        }
                     });
+
+                    // Load tab content
+                    this.loadAdminCenterTab();
                 },
 
                 loadAdminCenterTab() {

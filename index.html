@@ -994,7 +994,8 @@
                                         return `
                                             <a href="${affiliateLink}" target="_blank" rel="noopener noreferrer"
                                                 class="flex items-center justify-between p-4 bg-dark-800 hover:bg-dark-700 border border-light/10 hover:border-orange/50 rounded-lg transition-all group">
-                                                <div>
+                                                <div class="flex items-center gap-2">
+                                                    ${variant.product_type_icon ? `<img src="/uploads/icons/${variant.product_type_icon}" alt="${variant.product_type_name}" class="w-6 h-6 inline-block" style="filter: brightness(0) invert(1);">` : ''}
                                                     <span class="text-white font-bold">${variant.product_type_name}</span>
                                                 </div>
                                                 <div class="flex items-center gap-2">

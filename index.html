@@ -843,18 +843,22 @@
                                 </div>
                             </div>
                             <!-- Only Icons Section -->
-                            <div class="p-4 flex items-center justify-center gap-3">
-                                <!-- Country Icons -->
-                                ${Array.from(markets).map(flag => `
-                                    <img src="/uploads/icons/${flag}" alt="Country" class="w-8 h-8 rounded"
-                                         onerror="console.error('Failed to load country flag:', '${flag}', 'Path:', this.src)">
-                                `).join('')}
-                                <!-- Product Type Icons -->
-                                ${Array.from(productTypes).map(icon => `
-                                    <img src="/uploads/icons/${icon}" alt="Product Type" class="w-8 h-8"
-                                         style="filter: brightness(0) saturate(100%) invert(69%) sepia(51%) saturate(475%) hue-rotate(169deg) brightness(101%) contrast(95%);"
-                                         onerror="console.error('Failed to load product icon:', '${icon}', 'Path:', this.src)">
-                                `).join('')}
+                            <div class="p-4 flex items-center justify-between">
+                                <!-- Country Icons (left-aligned, half size) -->
+                                <div class="flex items-center gap-2">
+                                    ${Array.from(markets).map(flag => `
+                                        <img src="/uploads/icons/${flag}" alt="Country" class="w-4 h-4 rounded"
+                                             onerror="console.error('Failed to load country flag:', '${flag}', 'Path:', this.src)">
+                                    `).join('')}
+                                </div>
+                                <!-- Product Type Icons (right-aligned, full size) -->
+                                <div class="flex items-center gap-2">
+                                    ${Array.from(productTypes).map(icon => `
+                                        <img src="/uploads/icons/${icon}" alt="Product Type" class="w-8 h-8"
+                                             style="filter: brightness(0) saturate(100%) invert(69%) sepia(51%) saturate(475%) hue-rotate(169deg) brightness(101%) contrast(95%);"
+                                             onerror="console.error('Failed to load product icon:', '${icon}', 'Path:', this.src)">
+                                    `).join('')}
+                                </div>
                             </div>
                         </div>
                     `;

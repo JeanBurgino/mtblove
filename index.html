@@ -1047,12 +1047,12 @@
 
                         const products = Object.values(market.products);
                         productGrid.innerHTML = products.map(product => {
-                            // Use icon from database with light blue color filter
+                            // Use icon from database with light blue stroke
                             const iconHTML = product.product_type_icon
                                 ? `<img src="/uploads/icons/${product.product_type_icon}"
                                         alt="${product.product_type_name}"
-                                        class="w-16 h-16 mb-2"
-                                        style="filter: brightness(0) saturate(100%) invert(69%) sepia(51%) saturate(475%) hue-rotate(169deg) brightness(101%) contrast(95%);"
+                                        class="w-16 h-16 mb-2 product-icon"
+                                        style="fill: none; stroke: #b1dde9;"
                                         onerror="this.style.display='none'">`
                                 : '<div class="w-16 h-16 mb-2 bg-light/10 rounded-full"></div>';
 

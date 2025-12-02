@@ -31,6 +31,9 @@ yarn-error.log*
 # Uploads (optional - auskommentieren wenn Uploads versioniert werden sollen)
 uploads/*
 !uploads/.gitkeep
+!uploads/icons/
+uploads/icons/*
+!uploads/icons/*.svg
 
 # Cache
 .cache/

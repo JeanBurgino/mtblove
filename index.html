@@ -852,6 +852,7 @@
                                 <!-- Product Type Icons -->
                                 ${Array.from(productTypes).map(icon => `
                                     <img src="/uploads/icons/${icon}" alt="Product Type" class="w-8 h-8"
+                                         style="filter: brightness(0) saturate(100%) invert(69%) sepia(51%) saturate(475%) hue-rotate(169deg) brightness(101%) contrast(95%);"
                                          onerror="console.error('Failed to load product icon:', '${icon}', 'Path:', this.src)">
                                 `).join('')}
                             </div>

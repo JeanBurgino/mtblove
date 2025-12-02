@@ -921,9 +921,11 @@
                     const variantsByMarket = {};
                     design.variants.forEach(variant => {
                         if (!variantsByMarket[variant.country_code]) {
+                            const marketData = this.markets.find(m => m.id == variant.market_id);
                             variantsByMarket[variant.country_code] = {
                                 country_name: variant.country_name,
                                 country_code: variant.country_code,
+                                country_flag: marketData?.country_flag || '🏁',
                                 variants: []
                             };
                         }
@@ -932,7 +934,7 @@
 
                     return Object.values(variantsByMarket).map(market => `
                         <div class="mb-6">
-                            <h4 class="text-lg font-bold text-orange mb-3">${market.country_name} (${market.country_code})</h4>
+                            <h4 class="text-lg font-bold text-orange mb-3">${market.country_flag} ${market.country_name} (${market.country_code})</h4>
                             <div class="grid grid-cols-1 gap-3">
                                 ${market.variants.map(variant => {
                                     // Build affiliate link
@@ -1856,7 +1858,7 @@
                                                 onclick="appInstance.switchMarketTab('${market.id}')"
                                                 id="market-tab-${market.id}"
                                                 class="px-4 py-2 font-bold border-b-2 transition-colors whitespace-nowrap ${index === 0 ? 'border-orange text-orange' : 'border-transparent text-light/60 hover:text-white'}">
-                                                ${market.country_code} - ${market.country_name}
+                                                ${market.country_flag || '🏁'} ${market.country_code} - ${market.country_name}
                                             </button>
                                         `).join('')}
                                     </div>
@@ -1866,7 +1868,7 @@
                                         <div id="market-content-${market.id}" class="market-tab-content ${index === 0 ? 'block' : 'hidden'}">
                                             <div class="bg-dark-800 border border-light/10 rounded-lg p-4">
                                                 <h4 class="text-sm font-bold text-light mb-3">
-                                                    Wählen Sie Produkttypen für ${market.country_name}:
+                                                    ${market.country_flag || '🏁'} Wählen Sie Produkttypen für ${market.country_name}:
                                                 </h4>
                                                 <div class="space-y-3">
                                                     ${this.productTypes.map(pt => `
@@ -2127,7 +2129,7 @@
                                                 onclick="appInstance.switchMarketTab('${market.id}')"
                                                 id="market-tab-${market.id}"
                                                 class="px-4 py-2 font-bold border-b-2 transition-colors whitespace-nowrap ${index === 0 ? 'border-orange text-orange' : 'border-transparent text-light/60 hover:text-white'}">
-                                                ${market.country_code} - ${market.country_name}
+                                                ${market.country_flag || '🏁'} ${market.country_code} - ${market.country_name}
                                             </button>
                                         `).join('')}
                                     </div>
@@ -2138,7 +2140,7 @@
                                         <div id="market-content-${market.id}" class="market-tab-content ${index === 0 ? 'block' : 'hidden'}">
                                             <div class="bg-dark-800 border border-light/10 rounded-lg p-4">
                                                 <h4 class="text-sm font-bold text-light mb-3">
-                                                    Wählen Sie Produkttypen für ${market.country_name}:
+                                                    ${market.country_flag || '🏁'} Wählen Sie Produkttypen für ${market.country_name}:
                                                 </h4>
                                                 <div class="space-y-3">
                                                     ${this.productTypes.map(pt => {

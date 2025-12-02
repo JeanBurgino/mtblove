@@ -804,7 +804,15 @@
                     if (design.variants && design.variants.length > 0) {
                         design.variants.forEach(variant => {
                             if (variant.country_flag) {
-                                markets.add(variant.country_flag);
+                                // Normalize country flag filename
+                                let flagFile = variant.country_flag;
+                                // If it doesn't start with 'flag-', add it
+                                if (!flagFile.startsWith('flag-')) {
+                                    // Extract country code from filename like 'de.svg' -> 'de'
+                                    const countryCode = flagFile.replace('.svg', '');
+                                    flagFile = `flag-${countryCode}.svg`;
+                                }
+                                markets.add(flagFile);
                             }
                             // Only add product type icons that are SVG files (after migration)
                             // Ignore CSS classes (icon_class fallback before migration)
@@ -836,11 +844,13 @@
                             <div class="p-4 flex items-center justify-center gap-3">
                                 <!-- Country Icons -->
                                 ${Array.from(markets).map(flag => `
-                                    <img src="/uploads/icons/${flag}" alt="Country" class="w-8 h-8 rounded">
+                                    <img src="/uploads/icons/${flag}" alt="Country" class="w-8 h-8 rounded"
+                                         onerror="console.error('Failed to load country flag:', '${flag}', 'Path:', this.src)">
                                 `).join('')}
-                                <!-- Product Type Icons (only if SVG files are available after migration) -->
+                                <!-- Product Type Icons -->
                                 ${Array.from(productTypes).map(icon => `
-                                    <img src="/uploads/icons/${icon}" alt="Product Type" class="w-8 h-8">
+                                    <img src="/uploads/icons/${icon}" alt="Product Type" class="w-8 h-8"
+                                         onerror="console.error('Failed to load product icon:', '${icon}', 'Path:', this.src)">
                                 `).join('')}
                             </div>
                         </div>

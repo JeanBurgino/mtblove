@@ -854,7 +854,7 @@
                                 <!-- Product Type Icons (right-aligned, use external files) -->
                                 <div class="flex items-center gap-2">
                                     ${Array.from(productTypes).map(icon => `
-                                        <object data="/uploads/icons/${icon}" type="image/svg+xml" class="w-8 h-8 pointer-events-none" style="color: #b1dde9;"></object>
+                                        <img src="/uploads/icons/${icon}" alt="Product Type" class="w-8 h-8">
                                     `).join('')}
                                 </div>
                             </div>
@@ -1045,9 +1045,9 @@
 
                         const products = Object.values(market.products);
                         productGrid.innerHTML = products.map(product => {
-                            // Use external SVG file with object tag for proper color control
+                            // Use external SVG file from uploads/icons
                             const iconHTML = product.product_type_icon
-                                ? `<object data="/uploads/icons/${product.product_type_icon}" type="image/svg+xml" class="w-16 h-16 mb-2 pointer-events-none" style="color: #b1dde9;"></object>`
+                                ? `<img src="/uploads/icons/${product.product_type_icon}" alt="${product.product_type_name}" class="w-16 h-16 mb-2">`
                                 : '<div class="w-16 h-16 mb-2 bg-light/10 rounded-full"></div>';
 
                             return `

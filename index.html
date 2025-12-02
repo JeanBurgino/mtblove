@@ -1038,6 +1038,25 @@
                     let selectedCountry = defaultMarket;
                     let selectedProduct = null;
 
+                    // Helper function to get emoji icon for product type
+                    const getProductIcon = (productSlug, productName) => {
+                        const slug = (productSlug || productName || '').toLowerCase();
+                        const iconMap = {
+                            't-shirt': '👕',
+                            'tshirt': '👕',
+                            'hoodie': '🧥',
+                            'tank-top': '🎽',
+                            'tank top': '🎽',
+                            'long-sleeve': '👔',
+                            'long sleeve': '👔',
+                            'iphone-case': '📱',
+                            'phone case': '📱',
+                            'sweatshirt': '🧥',
+                            'jacket': '🧥'
+                        };
+                        return iconMap[slug] || '👕'; // Default to t-shirt emoji
+                    };
+
                     const renderProducts = (countryCode) => {
                         const market = variantsByMarket[countryCode];
                         if (!market || !market.products) {
@@ -1046,20 +1065,19 @@
                         }
 
                         const products = Object.values(market.products);
-                        productGrid.innerHTML = products.map(product => `
+                        productGrid.innerHTML = products.map(product => {
+                            const icon = getProductIcon(product.product_type_slug, product.product_type_name);
+                            return `
                             <div class="product-tile cursor-pointer p-4 bg-dark-800 border-2 border-light/10 hover:border-orange/50 rounded-lg transition-all group text-center"
                                 data-product-key="${product.product_type_slug || product.product_type_name}"
                                 data-asin="${product.asin}"
                                 data-market-id="${product.market_id}">
                                 <div class="flex flex-col items-center gap-2">
-                                    ${product.product_type_icon ?
-                                        `<img src="/uploads/icons/${product.product_type_icon}" alt="${product.product_type_name}" class="w-12 h-12 mb-2" style="filter: brightness(0) invert(1);">` :
-                                        '<div class="w-12 h-12 mb-2 bg-light/10 rounded-full"></div>'
-                                    }
+                                    <div class="text-5xl mb-2">${icon}</div>
                                     <span class="text-white font-bold text-sm">${product.product_type_name}</span>
                                 </div>
                             </div>
-                        `).join('');
+                        `}).join('');
 
                         // Add click handlers to product tiles
                         document.querySelectorAll('.product-tile').forEach(tile => {

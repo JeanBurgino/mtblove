@@ -85,11 +85,23 @@ function getDesign() {
             sendError('Design nicht gefunden', 404);
         }
 
+        // Determine which icon column to use
+        $iconColumn = 'icon_class';
+        try {
+            $checkColumn = $pdo->query("SHOW COLUMNS FROM product_types LIKE 'icon'");
+            if ($checkColumn->rowCount() > 0) {
+                $iconColumn = 'icon';
+            }
+        } catch (PDOException $e) {
+            // If check fails, use icon_class as fallback
+        }
+
         // Get variants
         $stmt = $pdo->prepare("
             SELECT v.*,
                    m.country_code, m.country_name,
-                   pt.name as product_type_name, pt.slug as product_type_slug
+                   pt.name as product_type_name, pt.slug as product_type_slug,
+                   pt.{$iconColumn} as product_type_icon
             FROM variants v
             INNER JOIN markets m ON v.market_id = m.id
             INNER JOIN product_types pt ON v.product_type_id = pt.id

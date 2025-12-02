@@ -814,6 +814,9 @@
                         });
                     }
 
+                    // Debug: Log what icons we found
+                    console.log('Design ID:', design.id, 'Markets:', Array.from(markets), 'Product Types:', Array.from(productTypes));
+
                     return `
                         <div class="group relative bg-dark-700 rounded-2xl overflow-hidden border border-light/10 hover:border-orange/50 transition-all hover:-translate-y-1 cursor-pointer"
                              onclick="appInstance.showDesignDetails(${design.id})">
@@ -855,6 +858,12 @@
                         });
 
                         const designs = await response.json();
+
+                        // Debug: Log the first design to see its structure
+                        if (designs.length > 0) {
+                            console.log('First design:', designs[0]);
+                            console.log('First design variants:', designs[0].variants);
+                        }
 
                         const grid = document.getElementById('designs-grid');
                         if (designs.length === 0) {

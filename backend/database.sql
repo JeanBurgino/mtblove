@@ -113,6 +113,7 @@ CREATE TABLE IF NOT EXISTS `markets` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `country_code` VARCHAR(2) NOT NULL UNIQUE COMMENT 'ISO Ländercode, z.B. "DE", "US"',
     `country_name` VARCHAR(100) NOT NULL COMMENT 'Voller Ländername, z.B. "Germany"',
+    `country_flag` VARCHAR(10) NOT NULL COMMENT 'Flaggen-Emoji, z.B. "🇩🇪"',
     `base_url` VARCHAR(255) NOT NULL COMMENT 'Amazon Basis-URL, z.B. "https://www.amazon.de"',
     `affiliate_tag` VARCHAR(100) NOT NULL COMMENT 'Affiliate/Partner-ID für diesen Markt',
     `currency_symbol` VARCHAR(10) NOT NULL COMMENT 'Währungssymbol: €, $, £',
@@ -127,10 +128,10 @@ CREATE TABLE IF NOT EXISTS `markets` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Standard-Märkte (DE, US, UK)
-INSERT INTO `markets` (`country_code`, `country_name`, `base_url`, `affiliate_tag`, `currency_symbol`, `currency_code`, `display_order`) VALUES
-('DE', 'Germany', 'https://www.amazon.de', 'mtblove-21', '€', 'EUR', 1),
-('US', 'United States', 'https://www.amazon.com', 'mtblove-20', '$', 'USD', 2),
-('UK', 'United Kingdom', 'https://www.amazon.co.uk', 'mtblove-21', '£', 'GBP', 3);
+INSERT INTO `markets` (`country_code`, `country_name`, `country_flag`, `base_url`, `affiliate_tag`, `currency_symbol`, `currency_code`, `display_order`) VALUES
+('DE', 'Germany', '🇩🇪', 'https://www.amazon.de', 'mtblove-21', '€', 'EUR', 1),
+('US', 'United States', '🇺🇸', 'https://www.amazon.com', 'mtblove-20', '$', 'USD', 2),
+('UK', 'United Kingdom', '🇬🇧', 'https://www.amazon.co.uk', 'mtblove-21', '£', 'GBP', 3);
 
 -- =============================================
 -- Tabelle: product_types (Produkt-Arten)
@@ -293,6 +294,7 @@ SELECT
     d.mockup_image_url,
     m.country_code,
     m.country_name,
+    m.country_flag,
     m.base_url,
     m.affiliate_tag,
     m.currency_symbol,

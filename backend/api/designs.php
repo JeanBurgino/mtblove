@@ -30,6 +30,22 @@ function getDesigns() {
         $stmt->execute();
         $designs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+        // Fetch variants with icons for each design
+        $variantStmt = $pdo->prepare("
+            SELECT v.design_id,
+                   m.country_flag,
+                   pt.icon as product_type_icon
+            FROM variants v
+            INNER JOIN markets m ON v.market_id = m.id
+            INNER JOIN product_types pt ON v.product_type_id = pt.id
+            WHERE v.design_id = ? AND v.is_active = 1
+        ");
+
+        foreach ($designs as &$design) {
+            $variantStmt->execute([$design['id']]);
+            $design['variants'] = $variantStmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+
         sendJSON($designs);
     } catch (PDOException $e) {
         error_log('Get designs error: ' . $e->getMessage());

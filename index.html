@@ -802,14 +802,24 @@
                     const productTypes = new Set();
 
                     if (design.variants && design.variants.length > 0) {
-                        design.variants.forEach(variant => {
+                        design.variants.forEach((variant, index) => {
+                            // Debug each variant
+                            if (index === 0) {
+                                console.log('Variant structure:', variant);
+                                console.log('variant.country_flag:', variant.country_flag);
+                                console.log('variant.product_type_icon:', variant.product_type_icon);
+                            }
+
                             // Add country flag from database (markets.country_flag)
                             if (variant.country_flag) {
                                 markets.add(variant.country_flag);
                             }
                             // Add product type icon from database (product_types.icon)
                             if (variant.product_type_icon) {
+                                console.log('Adding product type icon:', variant.product_type_icon);
                                 productTypes.add(variant.product_type_icon);
+                            } else {
+                                console.log('Variant missing product_type_icon:', variant);
                             }
                         });
                     }
@@ -865,6 +875,10 @@
                         if (designs.length > 0) {
                             console.log('First design:', designs[0]);
                             console.log('First design variants:', designs[0].variants);
+                            if (designs[0].variants && designs[0].variants.length > 0) {
+                                console.log('First variant details:', designs[0].variants[0]);
+                                console.log('Has product_type_icon?', designs[0].variants[0].product_type_icon);
+                            }
                         }
 
                         const grid = document.getElementById('designs-grid');

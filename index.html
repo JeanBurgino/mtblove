@@ -916,38 +916,20 @@
                         const modal = document.createElement('div');
                         modal.className = 'fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto';
                         modal.innerHTML = `
-                            <div class="bg-dark-700 border border-light/10 rounded-xl p-6 max-w-4xl w-full my-8">
-                                <div class="flex justify-between items-start mb-6">
-                                    <h2 class="text-3xl font-bold text-white">${design.title}</h2>
-                                    <button onclick="this.closest('.fixed').remove()"
-                                        class="text-light/60 hover:text-white transition-colors text-2xl leading-none">
-                                        ×
-                                    </button>
-                                </div>
+                            <div class="bg-dark-700 border border-light/10 rounded-xl p-6 max-w-4xl w-full my-8 relative">
+                                <!-- Close Button -->
+                                <button onclick="this.closest('.fixed').remove()"
+                                    class="absolute top-4 right-4 w-10 h-10 flex items-center justify-center bg-dark-800 hover:bg-red-500 border border-light/20 hover:border-red-500 rounded-lg transition-all text-white text-2xl leading-none z-10">
+                                    ×
+                                </button>
 
-                                <div class="grid md:grid-cols-2 gap-6 mb-6">
-                                    <!-- Design Image -->
-                                    <div class="aspect-square bg-dark-800 rounded-lg overflow-hidden flex items-center justify-center">
+                                <!-- Design Image Only -->
+                                <div class="mb-6">
+                                    <div class="aspect-square bg-dark-800 rounded-lg overflow-hidden flex items-center justify-center max-w-2xl mx-auto">
                                         ${design.mockup_image_url ?
                                             `<img src="${design.mockup_image_url}" alt="${design.title}" class="w-full h-full object-cover">` :
                                             '<span class="text-8xl">🎨</span>'
                                         }
-                                    </div>
-
-                                    <!-- Design Info -->
-                                    <div>
-                                        <h3 class="text-lg font-bold text-light mb-3">Beschreibung</h3>
-                                        <p class="text-light/70 mb-4">${design.description || 'Keine Beschreibung verfügbar'}</p>
-                                        ${design.tags ? `
-                                            <div class="mb-4">
-                                                <h3 class="text-lg font-bold text-light mb-2">Tags</h3>
-                                                <div class="flex flex-wrap gap-2">
-                                                    ${design.tags.split(',').map(tag => `
-                                                        <span class="px-3 py-1 bg-blue/20 text-blue text-sm rounded-full">${tag.trim()}</span>
-                                                    `).join('')}
-                                                </div>
-                                            </div>
-                                        ` : ''}
                                     </div>
                                 </div>
 
@@ -986,39 +968,56 @@
                         variantsByMarket[variant.country_code].variants.push(variant);
                     });
 
-                    return Object.values(variantsByMarket).map(market => `
-                        <div class="mb-6">
-                            <h4 class="text-lg font-bold text-orange mb-3 flex items-center gap-2">
-                                <img src="/uploads/icons/${market.country_flag}" alt="${market.country_code}" class="w-6 h-6 inline-block">
-                                ${market.country_name} (${market.country_code})
-                            </h4>
-                            <div class="grid grid-cols-1 gap-3">
-                                ${market.variants.map(variant => {
-                                    // Build affiliate link
-                                    const marketData = this.markets.find(m => m.id == variant.market_id);
-                                    const affiliateLink = marketData
-                                        ? marketData.base_url + '/dp/' + variant.asin + '?tag=' + marketData.affiliate_tag
-                                        : '#';
+                    return Object.values(variantsByMarket).map((market, index) => {
+                        const marketId = `market-${index}-${market.country_code}`;
+                        return `
+                        <div class="mb-4 border border-light/10 rounded-lg overflow-hidden">
+                            <button onclick="this.parentElement.classList.toggle('market-expanded'); event.stopPropagation();"
+                                class="w-full text-left p-4 bg-dark-800 hover:bg-dark-700 transition-colors flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <img src="/uploads/icons/${market.country_flag}" alt="${market.country_code}" class="w-6 h-6 inline-block">
+                                    <h4 class="text-lg font-bold text-orange">${market.country_name} (${market.country_code})</h4>
+                                </div>
+                                <svg class="w-5 h-5 text-orange transition-transform market-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            <div class="market-products hidden">
+                                <div class="p-4 grid grid-cols-1 gap-3 bg-dark-800/50">
+                                    ${market.variants.map(variant => {
+                                        // Build affiliate link
+                                        const marketData = this.markets.find(m => m.id == variant.market_id);
+                                        const affiliateLink = marketData
+                                            ? marketData.base_url + '/dp/' + variant.asin + '?tag=' + marketData.affiliate_tag
+                                            : '#';
 
-                                    return `
-                                        <a href="${affiliateLink}" target="_blank" rel="noopener noreferrer"
-                                            class="flex items-center justify-between p-4 bg-dark-800 hover:bg-dark-700 border border-light/10 hover:border-orange/50 rounded-lg transition-all group">
-                                            <div>
-                                                <span class="text-white font-bold">${variant.product_type_name}</span>
-                                                <span class="text-light/50 text-sm ml-2">ASIN: ${variant.asin}</span>
-                                            </div>
-                                            <div class="flex items-center gap-2">
-                                                <span class="text-orange font-bold group-hover:translate-x-1 transition-transform">Auf Amazon ansehen</span>
-                                                <svg class="w-5 h-5 text-orange group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                                                </svg>
-                                            </div>
-                                        </a>
-                                    `;
-                                }).join('')}
+                                        return `
+                                            <a href="${affiliateLink}" target="_blank" rel="noopener noreferrer"
+                                                class="flex items-center justify-between p-4 bg-dark-800 hover:bg-dark-700 border border-light/10 hover:border-orange/50 rounded-lg transition-all group">
+                                                <div>
+                                                    <span class="text-white font-bold">${variant.product_type_name}</span>
+                                                </div>
+                                                <div class="flex items-center gap-2">
+                                                    <span class="text-orange font-bold group-hover:translate-x-1 transition-transform">Check Price on Amazon</span>
+                                                    <svg class="w-5 h-5 text-orange group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                                    </svg>
+                                                </div>
+                                            </a>
+                                        `;
+                                    }).join('')}
+                                </div>
                             </div>
                         </div>
-                    `).join('');
+                        <style>
+                            .market-expanded .market-products {
+                                display: block !important;
+                            }
+                            .market-expanded .market-chevron {
+                                transform: rotate(180deg);
+                            }
+                        </style>
+                    `}).join('');
                 },
 
                 loadLoginPage() {

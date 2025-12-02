@@ -31,10 +31,21 @@ function getDesigns() {
         $designs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         // Fetch variants with icons for each design
+        // Check if icon column exists, otherwise use icon_class as fallback
+        $iconColumn = 'icon_class';
+        try {
+            $checkColumn = $pdo->query("SHOW COLUMNS FROM product_types LIKE 'icon'");
+            if ($checkColumn->rowCount() > 0) {
+                $iconColumn = 'icon';
+            }
+        } catch (PDOException $e) {
+            // If check fails, use icon_class as fallback
+        }
+
         $variantStmt = $pdo->prepare("
             SELECT v.design_id,
                    m.country_flag,
-                   pt.icon as product_type_icon
+                   pt.{$iconColumn} as product_type_icon
             FROM variants v
             INNER JOIN markets m ON v.market_id = m.id
             INNER JOIN product_types pt ON v.product_type_id = pt.id

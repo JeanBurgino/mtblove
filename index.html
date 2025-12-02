@@ -806,7 +806,9 @@
                             if (variant.country_flag) {
                                 markets.add(variant.country_flag);
                             }
-                            if (variant.product_type_icon) {
+                            // Only add product type icons that are SVG files (after migration)
+                            // Ignore CSS classes (icon_class fallback before migration)
+                            if (variant.product_type_icon && variant.product_type_icon.endsWith('.svg')) {
                                 productTypes.add(variant.product_type_icon);
                             }
                         });
@@ -833,7 +835,7 @@
                                 ${Array.from(markets).map(flag => `
                                     <img src="/uploads/icons/${flag}" alt="Country" class="w-8 h-8 rounded">
                                 `).join('')}
-                                <!-- Product Type Icons -->
+                                <!-- Product Type Icons (only if SVG files are available after migration) -->
                                 ${Array.from(productTypes).map(icon => `
                                     <img src="/uploads/icons/${icon}" alt="Product Type" class="w-8 h-8">
                                 `).join('')}

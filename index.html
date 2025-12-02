@@ -803,20 +803,12 @@
 
                     if (design.variants && design.variants.length > 0) {
                         design.variants.forEach(variant => {
+                            // Add country flag from database (markets.country_flag)
                             if (variant.country_flag) {
-                                // Normalize country flag filename
-                                let flagFile = variant.country_flag;
-                                // If it doesn't start with 'flag-', add it
-                                if (!flagFile.startsWith('flag-')) {
-                                    // Extract country code from filename like 'de.svg' -> 'de'
-                                    const countryCode = flagFile.replace('.svg', '');
-                                    flagFile = `flag-${countryCode}.svg`;
-                                }
-                                markets.add(flagFile);
+                                markets.add(variant.country_flag);
                             }
-                            // Only add product type icons that are SVG files (after migration)
-                            // Ignore CSS classes (icon_class fallback before migration)
-                            if (variant.product_type_icon && variant.product_type_icon.endsWith('.svg')) {
+                            // Add product type icon from database (product_types.icon)
+                            if (variant.product_type_icon) {
                                 productTypes.add(variant.product_type_icon);
                             }
                         });

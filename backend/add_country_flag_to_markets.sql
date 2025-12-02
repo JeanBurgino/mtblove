@@ -2,18 +2,18 @@
 -- Migration: Add country_flag column to markets table
 -- ============================================================================
 -- This migration adds the country_flag column to the existing markets table
--- and updates the existing records with flag emojis
+-- and updates the existing records with flag SVG filenames
 -- ============================================================================
 
 -- Add country_flag column after country_name
 ALTER TABLE `markets`
-ADD COLUMN `country_flag` VARCHAR(10) NOT NULL COMMENT 'Flaggen-Emoji, z.B. "🇩🇪"'
+ADD COLUMN `country_flag` VARCHAR(100) NOT NULL COMMENT 'SVG-Dateiname, z.B. "flag-de.svg"'
 AFTER `country_name`;
 
--- Update existing records with flag emojis
-UPDATE `markets` SET `country_flag` = '🇩🇪' WHERE `country_code` = 'DE';
-UPDATE `markets` SET `country_flag` = '🇺🇸' WHERE `country_code` = 'US';
-UPDATE `markets` SET `country_flag` = '🇬🇧' WHERE `country_code` = 'UK';
+-- Update existing records with flag SVG filenames
+UPDATE `markets` SET `country_flag` = 'flag-de.svg' WHERE `country_code` = 'DE';
+UPDATE `markets` SET `country_flag` = 'flag-us.svg' WHERE `country_code` = 'US';
+UPDATE `markets` SET `country_flag` = 'flag-uk.svg' WHERE `country_code` = 'UK';
 
 -- Recreate the active_variants view to include country_flag
 DROP VIEW IF EXISTS `active_variants`;

@@ -1038,6 +1038,52 @@
                     let selectedCountry = defaultMarket;
                     let selectedProduct = null;
 
+                    // Helper function to get inline SVG for product type icons
+                    const getProductIconSVG = (iconFilename) => {
+                        const iconMap = {
+                            'product-tshirt.svg': `
+                                <svg class="w-16 h-16 mb-2" viewBox="0 0 24 24" fill="none" stroke="#b1dde9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.47a1 1 0 00.99.84H6v6c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2v-6h2.15c.53 0 .98-.41 1-.94l.47-3.37a2 2 0 00-1.24-2.23z"/>
+                                    <line x1="8" y1="20" x2="8" y2="10"/>
+                                    <line x1="12" y1="20" x2="12" y2="10"/>
+                                    <line x1="16" y1="20" x2="16" y2="10"/>
+                                </svg>`,
+                            'product-hoodie.svg': `
+                                <svg class="w-16 h-16 mb-2" viewBox="0 0 24 24" fill="none" stroke="#b1dde9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M20 8.5V21a1 1 0 01-1 1H5a1 1 0 01-1-1V8.5"/>
+                                    <path d="M4 8.5L6.5 3h11L20 8.5"/>
+                                    <path d="M12 3v5"/>
+                                    <circle cx="12" cy="11" r="2"/>
+                                    <path d="M8 22V12h8v10"/>
+                                    <path d="M4 8.5c0 1.5 1 2.5 2.5 2.5S9 10 9 8.5"/>
+                                    <path d="M20 8.5c0 1.5-1 2.5-2.5 2.5S15 10 15 8.5"/>
+                                </svg>`,
+                            'product-tank-top.svg': `
+                                <svg class="w-16 h-16 mb-2" viewBox="0 0 24 24" fill="none" stroke="#b1dde9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M18 2L16 4a4 4 0 01-8 0L6 2"/>
+                                    <path d="M6 2L4 10v12h16V10L18 2"/>
+                                    <path d="M8 22V10h8v12"/>
+                                    <line x1="4" y1="10" x2="6" y2="10"/>
+                                    <line x1="18" y1="10" x2="20" y2="10"/>
+                                </svg>`,
+                            'product-long-sleeve.svg': `
+                                <svg class="w-16 h-16 mb-2" viewBox="0 0 24 24" fill="none" stroke="#b1dde9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.47a1 1 0 00.99.84H6v6c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2v-6h2.15c.53 0 .98-.41 1-.94l.47-3.37a2 2 0 00-1.24-2.23z"/>
+                                    <path d="M3 10l1-6"/>
+                                    <path d="M21 10l-1-6"/>
+                                    <line x1="8" y1="20" x2="8" y2="10"/>
+                                    <line x1="16" y1="20" x2="16" y2="10"/>
+                                </svg>`,
+                            'product-iphone-case.svg': `
+                                <svg class="w-16 h-16 mb-2" viewBox="0 0 24 24" fill="none" stroke="#b1dde9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+                                    <line x1="12" y1="18" x2="12.01" y2="18"/>
+                                    <rect x="7" y="4" width="10" height="12" rx="1"/>
+                                </svg>`
+                        };
+                        return iconMap[iconFilename] || '<div class="w-16 h-16 mb-2 bg-light/10 rounded-full"></div>';
+                    };
+
                     const renderProducts = (countryCode) => {
                         const market = variantsByMarket[countryCode];
                         if (!market || !market.products) {
@@ -1047,13 +1093,9 @@
 
                         const products = Object.values(market.products);
                         productGrid.innerHTML = products.map(product => {
-                            // Use icon from database with light blue stroke
+                            // Inline SVG icon with light blue stroke color
                             const iconHTML = product.product_type_icon
-                                ? `<img src="/uploads/icons/${product.product_type_icon}"
-                                        alt="${product.product_type_name}"
-                                        class="w-16 h-16 mb-2 product-icon"
-                                        style="fill: none; stroke: #b1dde9;"
-                                        onerror="this.style.display='none'">`
+                                ? getProductIconSVG(product.product_type_icon)
                                 : '<div class="w-16 h-16 mb-2 bg-light/10 rounded-full"></div>';
 
                             return `

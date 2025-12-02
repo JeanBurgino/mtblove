@@ -912,48 +912,99 @@
                             await this.loadMarketsAndProductTypes();
                         }
 
+                        // Group variants by market and product
+                        const variantsByMarket = this.groupVariantsByMarket(design);
+
+                        // Get first market as default
+                        const firstMarket = Object.keys(variantsByMarket)[0] || 'DE';
+
                         // Create modal
                         const modal = document.createElement('div');
                         modal.className = 'fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto';
                         modal.innerHTML = `
-                            <div class="bg-dark-700 border border-light/10 rounded-xl p-6 max-w-4xl w-full my-8 relative">
+                            <div class="bg-dark-700 border border-light/10 rounded-xl overflow-hidden max-w-5xl w-full my-8 relative">
                                 <!-- Close Button -->
                                 <button onclick="this.closest('.fixed').remove()"
                                     class="absolute top-4 right-4 w-10 h-10 flex items-center justify-center bg-dark-800 hover:bg-red-500 border border-light/20 hover:border-red-500 rounded-lg transition-all text-white text-2xl leading-none z-10">
                                     ×
                                 </button>
 
-                                <!-- Design Image Only -->
-                                <div class="mb-6">
-                                    <div class="aspect-square bg-dark-800 rounded-lg overflow-hidden flex items-center justify-center max-w-2xl mx-auto">
-                                        ${design.mockup_image_url ?
-                                            `<img src="${design.mockup_image_url}" alt="${design.title}" class="w-full h-full object-cover">` :
-                                            '<span class="text-8xl">🎨</span>'
-                                        }
+                                <!-- Desktop 2-Column Layout / Mobile Stacked -->
+                                <div class="flex flex-col md:flex-row">
+                                    <!-- Left: Image Column (Desktop) / Top Banner (Mobile) -->
+                                    <div class="w-full md:w-2/5 bg-dark-800">
+                                        <div class="aspect-[4/3] md:aspect-square md:h-full bg-dark-800 overflow-hidden flex items-center justify-center max-h-[150px] md:max-h-none">
+                                            ${design.mockup_image_url ?
+                                                `<img src="${design.mockup_image_url}" alt="${design.title}" class="w-full h-full object-cover">` :
+                                                '<span class="text-8xl">🎨</span>'
+                                            }
+                                        </div>
                                     </div>
-                                </div>
 
-                                <!-- Available Products by Market -->
-                                <div>
-                                    <h3 class="text-xl font-bold text-white mb-4">Verfügbare Produkte</h3>
-                                    ${this.renderDesignVariants(design)}
+                                    <!-- Right: Controls Column -->
+                                    <div class="w-full md:w-3/5 p-6 flex flex-col">
+                                        <!-- Title -->
+                                        <h2 class="text-2xl font-bold text-white mb-6">${design.title || 'Design auswählen'}</h2>
+
+                                        <!-- Country Selector -->
+                                        <div class="mb-6">
+                                            <label class="block text-light/70 text-sm font-medium mb-2">
+                                                Choose your Shop location
+                                            </label>
+                                            <div class="relative">
+                                                <select id="country-select"
+                                                    class="w-full px-4 py-3 bg-dark-800 border border-light/20 rounded-lg text-white appearance-none cursor-pointer focus:border-orange outline-none transition-all">
+                                                    ${Object.keys(variantsByMarket).map(countryCode => {
+                                                        const market = variantsByMarket[countryCode];
+                                                        return `<option value="${countryCode}">${market.country_name} (${countryCode})</option>`;
+                                                    }).join('')}
+                                                </select>
+                                                <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
+                                                    <svg class="w-5 h-5 text-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Product Selection Grid -->
+                                        <div class="mb-6 flex-1">
+                                            <label class="block text-light/70 text-sm font-medium mb-2">
+                                                Select Product Type
+                                            </label>
+                                            <div id="product-grid" class="grid grid-cols-2 gap-3">
+                                                <!-- Products will be dynamically inserted here -->
+                                            </div>
+                                        </div>
+
+                                        <!-- CTA Button -->
+                                        <button id="amazon-cta" disabled
+                                            class="w-full bg-orange hover:bg-orange-light disabled:bg-dark-800 disabled:cursor-not-allowed text-white py-4 px-6 rounded-lg font-bold transition-all flex items-center justify-center gap-2 group">
+                                            <span id="cta-text">Select a product</span>
+                                            <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         `;
 
                         document.body.appendChild(modal);
+
+                        // Initialize product selection logic
+                        this.initProductSelector(variantsByMarket, firstMarket);
                     } catch (error) {
                         console.error('Error loading design details:', error);
                         alert('Fehler beim Laden der Design-Details');
                     }
                 },
 
-                renderDesignVariants(design) {
+                groupVariantsByMarket(design) {
                     if (!design.variants || design.variants.length === 0) {
-                        return '<p class="text-light/60">Keine Varianten verfügbar</p>';
+                        return {};
                     }
 
-                    // Group variants by market
                     const variantsByMarket = {};
                     design.variants.forEach(variant => {
                         if (!variantsByMarket[variant.country_code]) {
@@ -962,63 +1013,124 @@
                                 country_name: variant.country_name,
                                 country_code: variant.country_code,
                                 country_flag: marketData?.country_flag || 'flag-default.svg',
-                                variants: []
+                                market_id: variant.market_id,
+                                products: {}
                             };
                         }
-                        variantsByMarket[variant.country_code].variants.push(variant);
+
+                        // Group by product type
+                        const productKey = variant.product_type_slug || variant.product_type_name;
+                        variantsByMarket[variant.country_code].products[productKey] = {
+                            ...variant,
+                            marketData: this.markets.find(m => m.id == variant.market_id)
+                        };
                     });
 
-                    return Object.values(variantsByMarket).map((market, index) => {
-                        const marketId = `market-${index}-${market.country_code}`;
-                        return `
-                        <div class="mb-4 border border-light/10 rounded-lg overflow-hidden">
-                            <button onclick="this.parentElement.classList.toggle('market-expanded'); event.stopPropagation();"
-                                class="w-full text-left p-4 bg-dark-800 hover:bg-dark-700 transition-colors flex items-center justify-between">
-                                <div class="flex items-center gap-2">
-                                    <img src="/uploads/icons/${market.country_flag}" alt="${market.country_code}" class="w-6 h-6 inline-block">
-                                    <h4 class="text-lg font-bold text-orange">${market.country_name} (${market.country_code})</h4>
-                                </div>
-                                <svg class="w-5 h-5 text-orange transition-transform market-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                </svg>
-                            </button>
-                            <div class="market-products hidden">
-                                <div class="p-4 grid grid-cols-1 gap-3 bg-dark-800/50">
-                                    ${market.variants.map(variant => {
-                                        // Build affiliate link
-                                        const marketData = this.markets.find(m => m.id == variant.market_id);
-                                        const affiliateLink = marketData
-                                            ? marketData.base_url + '/dp/' + variant.asin + '?tag=' + marketData.affiliate_tag
-                                            : '#';
+                    return variantsByMarket;
+                },
 
-                                        return `
-                                            <a href="${affiliateLink}" target="_blank" rel="noopener noreferrer"
-                                                class="flex items-center justify-between p-4 bg-dark-800 hover:bg-dark-700 border border-light/10 hover:border-orange/50 rounded-lg transition-all group">
-                                                <div class="flex items-center gap-2">
-                                                    ${variant.product_type_icon ? `<img src="/uploads/icons/${variant.product_type_icon}" alt="${variant.product_type_name}" class="w-6 h-6 inline-block" style="filter: brightness(0) invert(1);">` : ''}
-                                                    <span class="text-white font-bold">${variant.product_type_name}</span>
-                                                </div>
-                                                <div class="flex items-center gap-2">
-                                                    <span class="text-orange font-bold group-hover:translate-x-1 transition-transform">Check Price on Amazon</span>
-                                                    <svg class="w-5 h-5 text-orange group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                                                    </svg>
-                                                </div>
-                                            </a>
-                                        `;
-                                    }).join('')}
+                initProductSelector(variantsByMarket, defaultMarket) {
+                    const countrySelect = document.getElementById('country-select');
+                    const productGrid = document.getElementById('product-grid');
+                    const ctaButton = document.getElementById('amazon-cta');
+                    const ctaText = document.getElementById('cta-text');
+
+                    let selectedCountry = defaultMarket;
+                    let selectedProduct = null;
+
+                    const renderProducts = (countryCode) => {
+                        const market = variantsByMarket[countryCode];
+                        if (!market || !market.products) {
+                            productGrid.innerHTML = '<p class="col-span-2 text-light/60 text-center py-8">No products available</p>';
+                            return;
+                        }
+
+                        const products = Object.values(market.products);
+                        productGrid.innerHTML = products.map(product => `
+                            <div class="product-tile cursor-pointer p-4 bg-dark-800 border-2 border-light/10 hover:border-orange/50 rounded-lg transition-all group text-center"
+                                data-product-key="${product.product_type_slug || product.product_type_name}"
+                                data-asin="${product.asin}"
+                                data-market-id="${product.market_id}">
+                                <div class="flex flex-col items-center gap-2">
+                                    ${product.product_type_icon ?
+                                        `<img src="/uploads/icons/${product.product_type_icon}" alt="${product.product_type_name}" class="w-12 h-12 mb-2" style="filter: brightness(0) invert(1);">` :
+                                        '<div class="w-12 h-12 mb-2 bg-light/10 rounded-full"></div>'
+                                    }
+                                    <span class="text-white font-bold text-sm">${product.product_type_name}</span>
                                 </div>
                             </div>
-                        </div>
-                        <style>
-                            .market-expanded .market-products {
-                                display: block !important;
-                            }
-                            .market-expanded .market-chevron {
-                                transform: rotate(180deg);
-                            }
-                        </style>
-                    `}).join('');
+                        `).join('');
+
+                        // Add click handlers to product tiles
+                        document.querySelectorAll('.product-tile').forEach(tile => {
+                            tile.addEventListener('click', function() {
+                                // Remove selection from all tiles
+                                document.querySelectorAll('.product-tile').forEach(t => {
+                                    t.classList.remove('border-orange', 'bg-orange/10');
+                                    t.classList.add('border-light/10');
+                                });
+
+                                // Add selection to clicked tile
+                                this.classList.remove('border-light/10');
+                                this.classList.add('border-orange', 'bg-orange/10');
+
+                                selectedProduct = {
+                                    key: this.dataset.productKey,
+                                    asin: this.dataset.asin,
+                                    marketId: this.dataset.marketId
+                                };
+
+                                updateCTA();
+                            });
+                        });
+
+                        // Reset selection when changing country
+                        selectedProduct = null;
+                        updateCTA();
+                    };
+
+                    const updateCTA = () => {
+                        if (!selectedProduct) {
+                            ctaButton.disabled = true;
+                            ctaText.textContent = 'Select a product';
+                            ctaButton.onclick = null;
+                            return;
+                        }
+
+                        const market = variantsByMarket[selectedCountry];
+                        const product = market.products[selectedProduct.key];
+                        const marketData = product.marketData;
+
+                        if (!marketData || !product.asin) {
+                            ctaButton.disabled = true;
+                            ctaText.textContent = 'Product unavailable';
+                            return;
+                        }
+
+                        const affiliateLink = marketData.base_url + '/dp/' + product.asin + '?tag=' + marketData.affiliate_tag;
+
+                        ctaButton.disabled = false;
+                        ctaText.textContent = `View on Amazon ${market.country_code}`;
+
+                        ctaButton.onclick = (e) => {
+                            e.preventDefault();
+                            window.open(affiliateLink, '_blank', 'noopener,noreferrer');
+                        };
+                    };
+
+                    // Country change handler
+                    countrySelect.addEventListener('change', (e) => {
+                        selectedCountry = e.target.value;
+                        renderProducts(selectedCountry);
+                    });
+
+                    // Initial render
+                    renderProducts(selectedCountry);
+                },
+
+                renderDesignVariants(design) {
+                    // This function is now deprecated but kept for backward compatibility
+                    return '';
                 },
 
                 loadLoginPage() {

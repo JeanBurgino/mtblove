@@ -2,11 +2,14 @@
 -- Date: 2025-12-03
 -- Description: Adds a mockup_image_url field to the variants table to allow
 --              each variant to have its own product mockup image
+--
+-- Note: This field stores only the filename (e.g., "hoodie_mockup.jpg")
+--       The path (/uploads/mockups/) is configured in config.php
 
 -- Add mockup_image_url column to variants table
 ALTER TABLE `variants`
 ADD COLUMN `mockup_image_url` VARCHAR(500) NULL
-COMMENT 'URL zum Produkt-Mockup-Bild im Verzeichnis uploads/mockupds'
+COMMENT 'Dateiname des Produkt-Mockup-Bildes (ohne Pfad, z.B. "hoodie_mockup.jpg"). Pfad wird aus Config gelesen: /uploads/mockups/'
 AFTER `price`;
 
 -- Update the active_variants view to include the variant's mockup_image_url

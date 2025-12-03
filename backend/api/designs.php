@@ -288,15 +288,23 @@ function updateDesign() {
         sendError('Titel ist erforderlich', 400);
     }
 
-    // Get current design to check for existing image
+    // Get current design and variants
     $stmt = $pdo->prepare("SELECT mockup_image_url FROM designs WHERE id = ?");
     $stmt->execute([$id]);
     $currentDesign = $stmt->fetch(PDO::FETCH_ASSOC);
     $mockup_image_url = $currentDesign['mockup_image_url'];
 
-    // Handle file upload (if new file is provided)
-    if (isset($_FILES['mockup_image']) && $_FILES['mockup_image']['error'] === UPLOAD_ERR_OK) {
-        $file = $_FILES['mockup_image'];
+    // Get existing variant mockup images (to preserve if not replaced)
+    $stmt = $pdo->prepare("SELECT product_type_id, mockup_image_url FROM variants WHERE design_id = ? AND mockup_image_url IS NOT NULL");
+    $stmt->execute([$id]);
+    $existingMockups = [];
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $existingMockups[$row['product_type_id']] = $row['mockup_image_url'];
+    }
+
+    // Handle design image upload (if new file is provided)
+    if (isset($_FILES['design_image']) && $_FILES['design_image']['error'] === UPLOAD_ERR_OK) {
+        $file = $_FILES['design_image'];
 
         // Validate file type
         if (!in_array($file['type'], ALLOWED_IMAGE_TYPES)) {
@@ -331,6 +339,46 @@ function updateDesign() {
         }
     }
 
+    // Handle product type mockup images (saved to uploads/mockups)
+    $productTypeMockups = $existingMockups; // Start with existing mockups
+    foreach ($_FILES as $key => $file) {
+        if (strpos($key, 'mockup_image_') === 0 && $file['error'] === UPLOAD_ERR_OK) {
+            $productTypeId = str_replace('mockup_image_', '', $key);
+
+            // Validate file type
+            if (!in_array($file['type'], ALLOWED_IMAGE_TYPES)) {
+                sendError('Ungültiger Dateityp für ' . $key . '. Nur JPEG, PNG, GIF und WebP sind erlaubt.', 400);
+            }
+
+            // Validate file size
+            if ($file['size'] > MAX_FILE_SIZE) {
+                sendError('Datei zu groß (max 5MB) für ' . $key, 400);
+            }
+
+            // Delete old mockup if it exists
+            if (isset($existingMockups[$productTypeId]) && file_exists($_SERVER['DOCUMENT_ROOT'] . $existingMockups[$productTypeId])) {
+                unlink($_SERVER['DOCUMENT_ROOT'] . $existingMockups[$productTypeId]);
+            }
+
+            // Create unique filename
+            $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+            $filename = 'mockup_pt' . $productTypeId . '_' . time() . '_' . uniqid() . '.' . $extension;
+            $uploadPath = UPLOAD_DIR . 'mockups/' . $filename;
+
+            // Create directory if it doesn't exist
+            if (!file_exists(UPLOAD_DIR . 'mockups/')) {
+                mkdir(UPLOAD_DIR . 'mockups/', 0755, true);
+            }
+
+            // Move uploaded file
+            if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
+                $productTypeMockups[$productTypeId] = '/uploads/mockups/' . $filename;
+            } else {
+                sendError('Fehler beim Hochladen der Datei für ' . $key, 500);
+            }
+        }
+    }
+
     try {
         $pdo->beginTransaction();
 
@@ -351,18 +399,22 @@ function updateDesign() {
 
         if (!empty($variants)) {
             $stmt = $pdo->prepare("
-                INSERT INTO variants (design_id, market_id, product_type_id, asin, price, is_active)
-                VALUES (?, ?, ?, ?, ?, 1)
+                INSERT INTO variants (design_id, market_id, product_type_id, asin, price, mockup_image_url, is_active)
+                VALUES (?, ?, ?, ?, ?, ?, 1)
             ");
 
             foreach ($variants as $variant) {
                 if (!empty($variant['asin'])) {
+                    // Get the mockup image URL for this product type
+                    $mockupImageUrl = $productTypeMockups[$variant['product_type_id']] ?? null;
+
                     $stmt->execute([
                         $id,
                         $variant['market_id'],
                         $variant['product_type_id'],
                         trim($variant['asin']),
-                        $variant['price'] ?? null
+                        $variant['price'] ?? null,
+                        $mockupImageUrl
                     ]);
                 }
             }

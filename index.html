@@ -48,6 +48,25 @@
             font-family: system-ui, -apple-system, sans-serif;
         }
         [x-cloak] { display: none !important; }
+
+        /* CSS Mask for Product Type Icons */
+        .icon-mask {
+            background-color: #b1dde9; /* Light blue color */
+            mask-image: var(--url);
+            mask-size: contain;
+            mask-repeat: no-repeat;
+            mask-position: center;
+            -webkit-mask-image: var(--url); /* Safari/Chrome */
+            -webkit-mask-size: contain;
+            -webkit-mask-repeat: no-repeat;
+            -webkit-mask-position: center;
+            transition: background-color 0.3s ease;
+        }
+
+        /* Hover effect for product tiles */
+        .product-tile:hover .icon-mask {
+            background-color: #ffb056; /* Orange on hover */
+        }
     </style>
 </head>
 <body x-data="app()" x-init="init()">
@@ -851,10 +870,10 @@
                                              onerror="console.error('Failed to load country flag:', '${flag}', 'Path:', this.src)">
                                     `).join('')}
                                 </div>
-                                <!-- Product Type Icons (right-aligned, use external files) -->
+                                <!-- Product Type Icons (right-aligned, CSS mask) -->
                                 <div class="flex items-center gap-2">
                                     ${Array.from(productTypes).map(icon => `
-                                        <img src="/uploads/icons/${icon}" alt="Product Type" class="w-8 h-8">
+                                        <div class="icon-mask w-8 h-8" style="--url: url('/uploads/icons/${icon}')"></div>
                                     `).join('')}
                                 </div>
                             </div>
@@ -1045,9 +1064,9 @@
 
                         const products = Object.values(market.products);
                         productGrid.innerHTML = products.map(product => {
-                            // Use external SVG file from uploads/icons
+                            // Use CSS mask for icon
                             const iconHTML = product.product_type_icon
-                                ? `<img src="/uploads/icons/${product.product_type_icon}" alt="${product.product_type_name}" class="w-16 h-16 mb-2">`
+                                ? `<div class="icon-mask w-16 h-16 mb-2" style="--url: url('/uploads/icons/${product.product_type_icon}')"></div>`
                                 : '<div class="w-16 h-16 mb-2 bg-light/10 rounded-full"></div>';
 
                             return `

@@ -147,7 +147,7 @@ function addDesign() {
 
         // Validate file size
         if ($file['size'] > MAX_FILE_SIZE) {
-            sendError('Datei zu groß (max 5MB)', 400);
+            sendError('Datei zu groß (max 10MB)', 400);
         }
 
         // Create unique filename
@@ -181,7 +181,7 @@ function addDesign() {
 
             // Validate file size
             if ($file['size'] > MAX_FILE_SIZE) {
-                sendError('Datei zu groß (max 5MB) für ' . $key, 400);
+                sendError('Datei zu groß (max 10MB) für ' . $key, 400);
             }
 
             // Create unique filename
@@ -313,7 +313,7 @@ function updateDesign() {
 
         // Validate file size
         if ($file['size'] > MAX_FILE_SIZE) {
-            sendError('Datei zu groß (max 5MB)', 400);
+            sendError('Datei zu groß (max 10MB)', 400);
         }
 
         // Delete old image if it exists
@@ -352,7 +352,7 @@ function updateDesign() {
 
             // Validate file size
             if ($file['size'] > MAX_FILE_SIZE) {
-                sendError('Datei zu groß (max 5MB) für ' . $key, 400);
+                sendError('Datei zu groß (max 10MB) für ' . $key, 400);
             }
 
             // Delete old mockup if it exists

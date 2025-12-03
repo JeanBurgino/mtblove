@@ -950,10 +950,10 @@
                                 <div class="flex flex-col md:flex-row">
                                     <!-- Left: Image Column (Desktop) / Top Banner (Mobile) -->
                                     <div class="w-full md:w-2/5 bg-dark-800">
-                                        <div class="aspect-[4/3] md:aspect-square md:h-full bg-dark-800 overflow-hidden flex items-center justify-center max-h-[150px] md:max-h-none">
+                                        <div id="design-image-container" class="aspect-[4/3] md:aspect-square md:h-full bg-dark-800 overflow-hidden flex items-center justify-center max-h-[150px] md:max-h-none">
                                             ${design.mockup_image_url ?
-                                                `<img src="${design.mockup_image_url}" alt="${design.title}" class="w-full h-full object-cover">` :
-                                                '<span class="text-8xl">🎨</span>'
+                                                `<img id="design-image" src="${design.mockup_image_url}" alt="${design.title}" class="w-full h-full object-cover">` :
+                                                '<span id="design-image" class="text-8xl">🎨</span>'
                                             }
                                         </div>
                                     </div>
@@ -1017,7 +1017,7 @@
                         document.body.appendChild(modal);
 
                         // Initialize product selection logic
-                        this.initProductSelector(variantsByMarket, firstMarket);
+                        this.initProductSelector(design, variantsByMarket, firstMarket);
                     } catch (error) {
                         console.error('Error loading design details:', error);
                         alert('Fehler beim Laden der Design-Details');
@@ -1053,12 +1053,14 @@
                     return variantsByMarket;
                 },
 
-                initProductSelector(variantsByMarket, defaultMarket) {
+                initProductSelector(design, variantsByMarket, defaultMarket) {
                     const countrySelect = document.getElementById('country-select');
                     const productGrid = document.getElementById('product-grid');
                     const ctaButton = document.getElementById('amazon-cta');
                     const ctaText = document.getElementById('cta-text');
                     const amazonLogo = document.getElementById('amazon-logo');
+                    const designImage = document.getElementById('design-image');
+                    const designImageContainer = document.getElementById('design-image-container');
 
                     let selectedCountry = defaultMarket;
                     let selectedProduct = null;
@@ -1081,7 +1083,8 @@
                             <div class="product-tile cursor-pointer p-4 bg-dark-800 border-2 border-light/10 hover:border-orange/50 rounded-lg transition-all group text-center"
                                 data-product-key="${product.product_type_slug || product.product_type_name}"
                                 data-asin="${product.asin}"
-                                data-market-id="${product.market_id}">
+                                data-market-id="${product.market_id}"
+                                data-mockup-image="${product.mockup_image_url || ''}">
                                 <div class="flex flex-col items-center gap-2">
                                     ${iconHTML}
                                     <span class="text-white font-bold text-sm">${product.product_type_name}</span>
@@ -1108,12 +1111,30 @@
                                     marketId: this.dataset.marketId
                                 };
 
+                                // Update the displayed image
+                                const variantMockupUrl = this.dataset.mockupImage;
+                                const imageToDisplay = variantMockupUrl || design.mockup_image_url;
+
+                                if (imageToDisplay) {
+                                    designImageContainer.innerHTML = `<img id="design-image" src="${imageToDisplay}" alt="${design.title}" class="w-full h-full object-cover">`;
+                                } else {
+                                    designImageContainer.innerHTML = '<span id="design-image" class="text-8xl">🎨</span>';
+                                }
+
                                 updateCTA();
                             });
                         });
 
                         // Reset selection when changing country
                         selectedProduct = null;
+
+                        // Reset image to design default
+                        if (design.mockup_image_url) {
+                            designImageContainer.innerHTML = `<img id="design-image" src="${design.mockup_image_url}" alt="${design.title}" class="w-full h-full object-cover">`;
+                        } else {
+                            designImageContainer.innerHTML = '<span id="design-image" class="text-8xl">🎨</span>';
+                        }
+
                         updateCTA();
                     };
 

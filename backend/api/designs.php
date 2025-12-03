@@ -196,7 +196,7 @@ function addDesign() {
 
             // Move uploaded file
             if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
-                $productTypeMockups[$productTypeId] = '/uploads/mockups/' . $filename;
+                $productTypeMockups[$productTypeId] = $filename; // Store only filename, not full path
             } else {
                 sendError('Fehler beim Hochladen der Datei für ' . $key, 500);
             }
@@ -372,7 +372,7 @@ function updateDesign() {
 
             // Move uploaded file
             if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
-                $productTypeMockups[$productTypeId] = '/uploads/mockups/' . $filename;
+                $productTypeMockups[$productTypeId] = $filename; // Store only filename, not full path
             } else {
                 sendError('Fehler beim Hochladen der Datei für ' . $key, 500);
             }

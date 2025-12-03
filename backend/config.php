@@ -28,7 +28,7 @@ define('SESSION_NAME', 'mtblove_session');
 // Upload-Konfiguration
 define('UPLOAD_DIR', __DIR__ . '/../uploads/');
 define('MOCKUP_PATH', '/uploads/mockups/'); // Pfad für Varianten-Mockup-Bilder (relativ zur Webroot)
-define('MAX_FILE_SIZE', 5242880); // 5MB
+define('MAX_FILE_SIZE', 10485760); // 10MB
 define('ALLOWED_IMAGE_TYPES', ['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
 
 // Admin-Konfiguration

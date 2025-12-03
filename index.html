@@ -261,6 +261,7 @@
                 user: null,
                 authToken: localStorage.getItem('authToken') || null,
                 API_URL: '/backend/api/index.php',
+                MOCKUP_PATH: '/uploads/mockups/',
                 wallpapers: [],
                 wallpaperFilter: 'all',
                 wallpaperSort: 'newest',
@@ -1112,8 +1113,16 @@
                                 };
 
                                 // Update the displayed image
-                                const variantMockupUrl = this.dataset.mockupImage;
-                                const imageToDisplay = variantMockupUrl || design.mockup_image_url;
+                                const variantMockupFilename = this.dataset.mockupImage;
+                                let imageToDisplay;
+
+                                if (variantMockupFilename) {
+                                    // Variant has a mockup image - prepend the mockup path
+                                    imageToDisplay = appInstance.MOCKUP_PATH + variantMockupFilename;
+                                } else {
+                                    // Fallback to design mockup image (already has full path)
+                                    imageToDisplay = design.mockup_image_url;
+                                }
 
                                 if (imageToDisplay) {
                                     designImageContainer.innerHTML = `<img id="design-image" src="${imageToDisplay}" alt="${design.title}" class="w-full h-full object-cover">`;

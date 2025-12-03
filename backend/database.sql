@@ -169,7 +169,7 @@ CREATE TABLE IF NOT EXISTS `variants` (
     `product_type_id` INT UNSIGNED NOT NULL COMMENT 'Referenz zur product_types Tabelle',
     `asin` VARCHAR(20) NOT NULL COMMENT 'Amazon Produkt-ID (ASIN), z.B. "B08XV..."',
     `price` DECIMAL(10,2) NULL COMMENT 'Optional: Produktpreis zur Anzeige',
-    `mockup_image_url` VARCHAR(500) NULL COMMENT 'URL zum Produkt-Mockup-Bild im Verzeichnis uploads/mockupds',
+    `mockup_image_url` VARCHAR(500) NULL COMMENT 'Dateiname des Produkt-Mockup-Bildes (ohne Pfad, z.B. "hoodie_mockup.jpg"). Pfad wird aus Config gelesen: /uploads/mockups/',
     `is_active` TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'Variante aktiv (out of stock, gelöscht, etc.)',
     `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

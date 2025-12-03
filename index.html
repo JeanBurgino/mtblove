@@ -948,10 +948,10 @@
                                 </button>
 
                                 <!-- Desktop 2-Column Layout / Mobile Stacked -->
-                                <div class="flex flex-col md:flex-row">
+                                <div class="flex flex-col md:flex-row md:h-[600px]">
                                     <!-- Left: Image Column (Desktop) / Top Banner (Mobile) -->
-                                    <div class="w-full md:w-2/5 bg-dark-800">
-                                        <div id="design-image-container" class="aspect-[4/3] md:aspect-square md:h-full bg-dark-800 overflow-hidden flex items-center justify-center max-h-[150px] md:max-h-none">
+                                    <div class="w-full md:w-[55%] bg-dark-800">
+                                        <div id="design-image-container" class="aspect-[4/3] md:aspect-auto md:h-full bg-dark-800 overflow-hidden flex items-center justify-center max-h-[150px] md:max-h-none">
                                             ${design.mockup_image_url ?
                                                 `<img id="design-image" src="${design.mockup_image_url}" alt="${design.title}" class="w-full h-full object-cover">` :
                                                 '<span id="design-image" class="text-8xl">🎨</span>'
@@ -960,25 +960,25 @@
                                     </div>
 
                                     <!-- Right: Controls Column -->
-                                    <div class="w-full md:w-3/5 p-6 flex flex-col">
+                                    <div class="w-full md:w-[45%] p-6 md:p-8 flex flex-col md:overflow-y-auto">
                                         <!-- Title -->
                                         <h2 class="text-2xl font-bold text-white mb-6">${design.title || 'Design auswählen'}</h2>
 
                                         <!-- Country Selector -->
-                                        <div class="mb-6">
-                                            <label class="block text-light/70 text-sm font-medium mb-2">
+                                        <div class="mb-5">
+                                            <label class="block text-light/70 text-xs font-medium mb-1.5">
                                                 Choose your Shop location
                                             </label>
                                             <div class="relative">
                                                 <select id="country-select"
-                                                    class="w-full px-4 py-3 bg-dark-800 border border-light/20 rounded-lg text-white appearance-none cursor-pointer focus:border-orange outline-none transition-all">
+                                                    class="w-full px-3 py-2 text-sm bg-dark-800 border border-light/20 rounded-lg text-white appearance-none cursor-pointer focus:border-orange outline-none transition-all">
                                                     ${Object.keys(variantsByMarket).map(countryCode => {
                                                         const market = variantsByMarket[countryCode];
                                                         return `<option value="${countryCode}">${market.country_name} (${countryCode})</option>`;
                                                     }).join('')}
                                                 </select>
-                                                <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
-                                                    <svg class="w-5 h-5 text-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                                                    <svg class="w-4 h-4 text-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                                     </svg>
                                                 </div>
@@ -987,10 +987,10 @@
 
                                         <!-- Product Selection Grid -->
                                         <div class="mb-6 flex-1">
-                                            <label class="block text-light/70 text-sm font-medium mb-2">
+                                            <label class="block text-light/70 text-xs font-medium mb-2">
                                                 Select Product Type
                                             </label>
-                                            <div id="product-grid" class="grid grid-cols-2 gap-3">
+                                            <div id="product-grid" class="flex flex-col gap-2">
                                                 <!-- Products will be dynamically inserted here -->
                                             </div>
                                         </div>
@@ -1069,7 +1069,7 @@
                     const renderProducts = (countryCode) => {
                         const market = variantsByMarket[countryCode];
                         if (!market || !market.products) {
-                            productGrid.innerHTML = '<p class="col-span-2 text-light/60 text-center py-8">No products available</p>';
+                            productGrid.innerHTML = '<p class="text-light/60 text-center py-8">No products available</p>';
                             return;
                         }
 
@@ -1077,18 +1077,18 @@
                         productGrid.innerHTML = products.map(product => {
                             // Use CSS mask for icon
                             const iconHTML = product.product_type_icon
-                                ? `<div class="icon-mask w-16 h-16 mb-2" style="--url: url('/uploads/icons/${product.product_type_icon}')"></div>`
-                                : '<div class="w-16 h-16 mb-2 bg-light/10 rounded-full"></div>';
+                                ? `<div class="icon-mask w-7 h-7" style="--url: url('/uploads/icons/${product.product_type_icon}')"></div>`
+                                : '<div class="w-7 h-7 bg-light/10 rounded-full"></div>';
 
                             return `
-                            <div class="product-tile cursor-pointer p-4 bg-dark-800 border-2 border-light/10 hover:border-orange/50 rounded-lg transition-all group text-center"
+                            <div class="product-tile cursor-pointer p-3 bg-dark-800 border-2 border-light/10 hover:border-orange/50 hover:bg-dark-800/80 rounded-lg transition-all group w-full"
                                 data-product-key="${product.product_type_slug || product.product_type_name}"
                                 data-asin="${product.asin}"
                                 data-market-id="${product.market_id}"
                                 data-mockup-image="${product.mockup_image_url || ''}">
-                                <div class="flex flex-col items-center gap-2">
+                                <div class="flex flex-row items-center gap-3">
                                     ${iconHTML}
-                                    <span class="text-white font-bold text-sm">${product.product_type_name}</span>
+                                    <span class="text-white font-medium text-sm">${product.product_type_name}</span>
                                 </div>
                             </div>
                         `}).join('');

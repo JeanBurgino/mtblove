@@ -953,7 +953,7 @@
                                     <div class="w-full md:w-[55%] bg-dark-800">
                                         <div id="design-image-container" class="aspect-[4/3] md:aspect-auto md:h-full bg-dark-800 overflow-hidden flex items-center justify-center max-h-[150px] md:max-h-none">
                                             ${design.mockup_image_url ?
-                                                `<img id="design-image" src="${design.mockup_image_url}" alt="${design.title}" class="w-full h-full object-cover">` :
+                                                `<img id="design-image" src="${design.mockup_image_url}" alt="${design.title}" class="w-full h-full object-contain md:object-cover">` :
                                                 '<span id="design-image" class="text-8xl">🎨</span>'
                                             }
                                         </div>
@@ -1119,7 +1119,7 @@
                                 }
 
                                 if (imageToDisplay) {
-                                    designImageContainer.innerHTML = `<img id="design-image" src="${imageToDisplay}" alt="${design.title}" class="w-full h-full object-cover">`;
+                                    designImageContainer.innerHTML = `<img id="design-image" src="${imageToDisplay}" alt="${design.title}" class="w-full h-full object-contain md:object-cover">`;
                                 } else {
                                     designImageContainer.innerHTML = '<span id="design-image" class="text-8xl">🎨</span>';
                                 }
@@ -1133,7 +1133,7 @@
 
                         // Reset image to design default
                         if (design.mockup_image_url) {
-                            designImageContainer.innerHTML = `<img id="design-image" src="${design.mockup_image_url}" alt="${design.title}" class="w-full h-full object-cover">`;
+                            designImageContainer.innerHTML = `<img id="design-image" src="${design.mockup_image_url}" alt="${design.title}" class="w-full h-full object-contain md:object-cover">`;
                         } else {
                             designImageContainer.innerHTML = '<span id="design-image" class="text-8xl">🎨</span>';
                         }

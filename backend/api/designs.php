@@ -135,10 +135,10 @@ function addDesign() {
         sendError('Titel ist erforderlich', 400);
     }
 
-    // Handle file upload
+    // Handle design image upload (saved to uploads/designs)
     $mockup_image_url = '';
-    if (isset($_FILES['mockup_image']) && $_FILES['mockup_image']['error'] === UPLOAD_ERR_OK) {
-        $file = $_FILES['mockup_image'];
+    if (isset($_FILES['design_image']) && $_FILES['design_image']['error'] === UPLOAD_ERR_OK) {
+        $file = $_FILES['design_image'];
 
         // Validate file type
         if (!in_array($file['type'], ALLOWED_IMAGE_TYPES)) {
@@ -165,6 +165,41 @@ function addDesign() {
             $mockup_image_url = '/uploads/designs/' . $filename;
         } else {
             sendError('Fehler beim Hochladen der Datei', 500);
+        }
+    }
+
+    // Handle product type mockup images (saved to uploads/mockups)
+    $productTypeMockups = [];
+    foreach ($_FILES as $key => $file) {
+        if (strpos($key, 'mockup_image_') === 0 && $file['error'] === UPLOAD_ERR_OK) {
+            $productTypeId = str_replace('mockup_image_', '', $key);
+
+            // Validate file type
+            if (!in_array($file['type'], ALLOWED_IMAGE_TYPES)) {
+                sendError('Ungültiger Dateityp für ' . $key . '. Nur JPEG, PNG, GIF und WebP sind erlaubt.', 400);
+            }
+
+            // Validate file size
+            if ($file['size'] > MAX_FILE_SIZE) {
+                sendError('Datei zu groß (max 5MB) für ' . $key, 400);
+            }
+
+            // Create unique filename
+            $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+            $filename = 'mockup_pt' . $productTypeId . '_' . time() . '_' . uniqid() . '.' . $extension;
+            $uploadPath = UPLOAD_DIR . 'mockups/' . $filename;
+
+            // Create directory if it doesn't exist
+            if (!file_exists(UPLOAD_DIR . 'mockups/')) {
+                mkdir(UPLOAD_DIR . 'mockups/', 0755, true);
+            }
+
+            // Move uploaded file
+            if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
+                $productTypeMockups[$productTypeId] = '/uploads/mockups/' . $filename;
+            } else {
+                sendError('Fehler beim Hochladen der Datei für ' . $key, 500);
+            }
         }
     }
 
@@ -195,18 +230,22 @@ function addDesign() {
 
         if (!empty($variants)) {
             $stmt = $pdo->prepare("
-                INSERT INTO variants (design_id, market_id, product_type_id, asin, price, is_active)
-                VALUES (?, ?, ?, ?, ?, 1)
+                INSERT INTO variants (design_id, market_id, product_type_id, asin, price, mockup_image_url, is_active)
+                VALUES (?, ?, ?, ?, ?, ?, 1)
             ");
 
             foreach ($variants as $variant) {
                 if (!empty($variant['asin'])) {
+                    // Get the mockup image URL for this product type
+                    $mockupImageUrl = $productTypeMockups[$variant['product_type_id']] ?? null;
+
                     $stmt->execute([
                         $designId,
                         $variant['market_id'],
                         $variant['product_type_id'],
                         trim($variant['asin']),
-                        $variant['price'] ?? null
+                        $variant['price'] ?? null,
+                        $mockupImageUrl
                     ]);
                 }
             }

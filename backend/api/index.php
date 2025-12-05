@@ -152,6 +152,11 @@ try {
             getDesignVariants();
             break;
 
+        case 'bulk_import_designs':
+            require_once __DIR__ . '/designs.php';
+            bulkImportDesigns();
+            break;
+
         // Excuse Endpoints
         case 'get_random_excuse':
             require_once __DIR__ . '/excuses.php';

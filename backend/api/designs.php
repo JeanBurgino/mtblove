@@ -592,6 +592,7 @@ function generateSlug($text) {
 
 /**
  * Bulk import designs from CSV file
+ * Supports multiple product types per design using UUID from Edit Url
  */
 function bulkImportDesigns() {
     requireAuth(['admin', 'editor']);
@@ -616,6 +617,15 @@ function bulkImportDesigns() {
         sendError('Datei zu groß (max 10MB)', 400);
     }
 
+    // Check if uuid column exists in designs table
+    $hasUuidColumn = false;
+    try {
+        $stmt = $pdo->query("SHOW COLUMNS FROM designs LIKE 'uuid'");
+        $hasUuidColumn = $stmt->rowCount() > 0;
+    } catch (Exception $e) {
+        // If check fails, assume column doesn't exist
+    }
+
     // Read and parse CSV file
     $csvData = [];
     if (($handle = fopen($file['tmp_name'], 'r')) !== false) {
@@ -627,11 +637,11 @@ function bulkImportDesigns() {
             sendError('CSV-Datei ist leer oder ungültig', 400);
         }
 
-        // Normalize headers (trim and lowercase for matching)
+        // Normalize headers (trim)
         $headers = array_map('trim', $headers);
 
         // Find required column indices
-        $requiredColumns = ['Brand', 'Title', 'ProductType', 'Marketplace', 'Asin'];
+        $requiredColumns = ['Title', 'ProductType', 'Marketplace', 'Asin'];
         $columnIndices = [];
 
         foreach ($requiredColumns as $col) {
@@ -644,7 +654,7 @@ function bulkImportDesigns() {
         }
 
         // Optional columns
-        $optionalColumns = ['Description', 'Focus Keywords', 'Price'];
+        $optionalColumns = ['Brand', 'Description', 'Focus Keywords', 'Price', 'Edit Url'];
         foreach ($optionalColumns as $col) {
             $index = array_search($col, $headers);
             if ($index !== false) {
@@ -703,6 +713,7 @@ function bulkImportDesigns() {
     // Process imports
     $imported = 0;
     $skipped = 0;
+    $variantsAdded = 0;
     $errors = [];
 
     foreach ($csvData as $rowIndex => $row) {
@@ -718,6 +729,13 @@ function bulkImportDesigns() {
             $description = isset($columnIndices['Description']) ? trim($row[$columnIndices['Description']]) : '';
             $tags = isset($columnIndices['Focus Keywords']) ? trim($row[$columnIndices['Focus Keywords']]) : '';
             $price = isset($columnIndices['Price']) ? trim($row[$columnIndices['Price']]) : null;
+            $editUrl = isset($columnIndices['Edit Url']) ? trim($row[$columnIndices['Edit Url']]) : '';
+
+            // Extract UUID from Edit Url if available
+            $uuid = null;
+            if (!empty($editUrl) && preg_match('/designs\/([a-f0-9\-]{36})/', $editUrl, $matches)) {
+                $uuid = $matches[1];
+            }
 
             // Validate required fields
             if (empty($title)) {
@@ -760,48 +778,78 @@ function bulkImportDesigns() {
                 continue;
             }
 
-            // Add brand to title if exists
-            $fullTitle = !empty($brand) ? "{$brand} - {$title}" : $title;
-
-            // Generate slug
-            $slug = generateSlug($fullTitle);
-
-            // Check if slug already exists
-            $stmt = $pdo->prepare("SELECT COUNT(*) FROM designs WHERE slug = ?");
-            $stmt->execute([$slug]);
-            if ($stmt->fetchColumn() > 0) {
-                // Add timestamp to make it unique
-                $slug .= '-' . time() . '-' . $rowIndex;
+            // Check if design already exists (by UUID if available and column exists)
+            $designId = null;
+            if ($hasUuidColumn && !empty($uuid)) {
+                $stmt = $pdo->prepare("SELECT id FROM designs WHERE uuid = ? AND is_active = 1");
+                $stmt->execute([$uuid]);
+                $designId = $stmt->fetchColumn();
             }
 
-            // Begin transaction for this design
+            // Begin transaction
             $pdo->beginTransaction();
 
             try {
-                // Insert design
-                $stmt = $pdo->prepare("
-                    INSERT INTO designs (title, slug, mockup_image_url, description, tags, is_active)
-                    VALUES (?, ?, ?, ?, ?, 1)
-                ");
-                $stmt->execute([$fullTitle, $slug, $defaultMockupImage, $description, $tags]);
-                $designId = $pdo->lastInsertId();
+                // If design doesn't exist, create it
+                if (!$designId) {
+                    // Add brand to title if exists
+                    $fullTitle = !empty($brand) ? "{$brand} - {$title}" : $title;
 
-                // Insert variant
+                    // Generate slug
+                    $slug = generateSlug($fullTitle);
+
+                    // Check if slug already exists
+                    $stmt = $pdo->prepare("SELECT COUNT(*) FROM designs WHERE slug = ?");
+                    $stmt->execute([$slug]);
+                    if ($stmt->fetchColumn() > 0) {
+                        // Add timestamp to make it unique
+                        $slug .= '-' . time() . '-' . $rowIndex;
+                    }
+
+                    // Insert design
+                    if ($hasUuidColumn) {
+                        $stmt = $pdo->prepare("
+                            INSERT INTO designs (title, slug, uuid, mockup_image_url, description, tags, is_active)
+                            VALUES (?, ?, ?, ?, ?, ?, 1)
+                        ");
+                        $stmt->execute([$fullTitle, $slug, $uuid, $defaultMockupImage, $description, $tags]);
+                    } else {
+                        $stmt = $pdo->prepare("
+                            INSERT INTO designs (title, slug, mockup_image_url, description, tags, is_active)
+                            VALUES (?, ?, ?, ?, ?, 1)
+                        ");
+                        $stmt->execute([$fullTitle, $slug, $defaultMockupImage, $description, $tags]);
+                    }
+                    $designId = $pdo->lastInsertId();
+                    $imported++;
+                }
+
+                // Check if this variant already exists
                 $stmt = $pdo->prepare("
-                    INSERT INTO variants (design_id, market_id, product_type_id, asin, price, mockup_image_url, is_active)
-                    VALUES (?, ?, ?, ?, ?, ?, 1)
+                    SELECT COUNT(*) FROM variants
+                    WHERE design_id = ? AND market_id = ? AND product_type_id = ?
                 ");
-                $stmt->execute([
-                    $designId,
-                    $marketId,
-                    $productTypeId,
-                    $asin,
-                    !empty($price) ? floatval($price) : null,
-                    $defaultMockupImage
-                ]);
+                $stmt->execute([$designId, $marketId, $productTypeId]);
+                $variantExists = $stmt->fetchColumn() > 0;
+
+                if (!$variantExists) {
+                    // Insert variant
+                    $stmt = $pdo->prepare("
+                        INSERT INTO variants (design_id, market_id, product_type_id, asin, price, mockup_image_url, is_active)
+                        VALUES (?, ?, ?, ?, ?, ?, 1)
+                    ");
+                    $stmt->execute([
+                        $designId,
+                        $marketId,
+                        $productTypeId,
+                        $asin,
+                        !empty($price) ? floatval($price) : null,
+                        $defaultMockupImage
+                    ]);
+                    $variantsAdded++;
+                }
 
                 $pdo->commit();
-                $imported++;
 
             } catch (Exception $e) {
                 $pdo->rollBack();
@@ -819,6 +867,7 @@ function bulkImportDesigns() {
         'success' => true,
         'message' => 'Bulk-Import abgeschlossen',
         'imported' => $imported,
+        'variants_added' => $variantsAdded,
         'skipped' => $skipped,
         'total' => count($csvData),
         'errors' => array_slice($errors, 0, 20) // Limit errors to first 20

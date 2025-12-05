@@ -1164,7 +1164,9 @@
                             return;
                         }
 
-                        const affiliateLink = marketData.base_url + '/dp/' + product.asin + '?tag=' + marketData.affiliate_tag;
+                        // Ensure we don't duplicate /dp/ in the URL
+                        const baseUrl = marketData.base_url.replace(/\/dp\/?$/, '');
+                        const affiliateLink = baseUrl + '/dp/' + product.asin + '?tag=' + marketData.affiliate_tag;
 
                         ctaButton.disabled = false;
                         ctaText.textContent = `View on Amazon ${market.country_code}`;

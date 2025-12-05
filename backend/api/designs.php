@@ -589,3 +589,238 @@ function generateSlug($text) {
 
     return $text;
 }
+
+/**
+ * Bulk import designs from CSV file
+ */
+function bulkImportDesigns() {
+    requireAuth(['admin', 'editor']);
+
+    $pdo = getDBConnection();
+
+    // Check if file was uploaded
+    if (!isset($_FILES['csv_file']) || $_FILES['csv_file']['error'] !== UPLOAD_ERR_OK) {
+        sendError('CSV-Datei ist erforderlich', 400);
+    }
+
+    $file = $_FILES['csv_file'];
+
+    // Validate file type
+    $allowedMimeTypes = ['text/csv', 'text/plain', 'application/csv', 'application/vnd.ms-excel'];
+    if (!in_array($file['type'], $allowedMimeTypes)) {
+        sendError('Ungültiger Dateityp. Nur CSV-Dateien sind erlaubt.', 400);
+    }
+
+    // Validate file size (10MB max)
+    if ($file['size'] > MAX_FILE_SIZE) {
+        sendError('Datei zu groß (max 10MB)', 400);
+    }
+
+    // Read and parse CSV file
+    $csvData = [];
+    if (($handle = fopen($file['tmp_name'], 'r')) !== false) {
+        // Read header row
+        $headers = fgetcsv($handle);
+
+        if ($headers === false) {
+            fclose($handle);
+            sendError('CSV-Datei ist leer oder ungültig', 400);
+        }
+
+        // Normalize headers (trim and lowercase for matching)
+        $headers = array_map('trim', $headers);
+
+        // Find required column indices
+        $requiredColumns = ['Brand', 'Title', 'ProductType', 'Marketplace', 'Asin'];
+        $columnIndices = [];
+
+        foreach ($requiredColumns as $col) {
+            $index = array_search($col, $headers);
+            if ($index === false) {
+                fclose($handle);
+                sendError("Erforderliche Spalte fehlt: {$col}", 400);
+            }
+            $columnIndices[$col] = $index;
+        }
+
+        // Optional columns
+        $optionalColumns = ['Description', 'Focus Keywords', 'Price'];
+        foreach ($optionalColumns as $col) {
+            $index = array_search($col, $headers);
+            if ($index !== false) {
+                $columnIndices[$col] = $index;
+            }
+        }
+
+        // Read data rows
+        while (($row = fgetcsv($handle)) !== false) {
+            if (count($row) > 0 && !empty(trim($row[0]))) {
+                $csvData[] = $row;
+            }
+        }
+        fclose($handle);
+    } else {
+        sendError('Fehler beim Lesen der CSV-Datei', 500);
+    }
+
+    if (empty($csvData)) {
+        sendError('CSV-Datei enthält keine Daten', 400);
+    }
+
+    // Load markets and product types for mapping
+    $marketsStmt = $pdo->query("SELECT id, country_code, country_name FROM markets WHERE is_active = 1");
+    $markets = $marketsStmt->fetchAll(PDO::FETCH_ASSOC);
+    $marketMap = [];
+    foreach ($markets as $market) {
+        $marketMap[strtoupper($market['country_code'])] = $market['id'];
+        $marketMap[strtoupper($market['country_name'])] = $market['id'];
+    }
+
+    $productTypesStmt = $pdo->query("SELECT id, name, slug FROM product_types WHERE is_active = 1");
+    $productTypes = $productTypesStmt->fetchAll(PDO::FETCH_ASSOC);
+    $productTypeMap = [];
+    foreach ($productTypes as $pt) {
+        // Map various names to product types
+        $productTypeMap[strtolower($pt['name'])] = $pt['id'];
+        $productTypeMap[strtolower($pt['slug'])] = $pt['id'];
+    }
+
+    // Add common variations
+    $productTypeMap['standard t-shirt'] = $productTypeMap['standard t-shirt'] ?? null;
+    $productTypeMap['t-shirt'] = $productTypeMap['standard t-shirt'] ?? null;
+    $productTypeMap['tshirt'] = $productTypeMap['standard t-shirt'] ?? null;
+    $productTypeMap['pullover hoodie'] = $productTypeMap['hoodie'] ?? null;
+    $productTypeMap['hoodie'] = $productTypeMap['hoodie'] ?? null;
+    $productTypeMap['iphone cases'] = $productTypeMap['iphone case'] ?? null;
+    $productTypeMap['iphone case'] = $productTypeMap['iphone case'] ?? null;
+    $productTypeMap['tank top'] = $productTypeMap['tank top'] ?? null;
+    $productTypeMap['tank'] = $productTypeMap['tank top'] ?? null;
+    $productTypeMap['long sleeve'] = $productTypeMap['long sleeve'] ?? null;
+
+    // Default mockup image path
+    $defaultMockupImage = '/uploads/Logo_small copy.png';
+
+    // Process imports
+    $imported = 0;
+    $skipped = 0;
+    $errors = [];
+
+    foreach ($csvData as $rowIndex => $row) {
+        $lineNumber = $rowIndex + 2; // +2 because of header row and 0-based index
+
+        try {
+            // Extract data from row
+            $brand = isset($columnIndices['Brand']) ? trim($row[$columnIndices['Brand']]) : '';
+            $title = isset($columnIndices['Title']) ? trim($row[$columnIndices['Title']]) : '';
+            $productTypeStr = isset($columnIndices['ProductType']) ? trim($row[$columnIndices['ProductType']]) : '';
+            $marketplaceStr = isset($columnIndices['Marketplace']) ? trim($row[$columnIndices['Marketplace']]) : '';
+            $asin = isset($columnIndices['Asin']) ? trim($row[$columnIndices['Asin']]) : '';
+            $description = isset($columnIndices['Description']) ? trim($row[$columnIndices['Description']]) : '';
+            $tags = isset($columnIndices['Focus Keywords']) ? trim($row[$columnIndices['Focus Keywords']]) : '';
+            $price = isset($columnIndices['Price']) ? trim($row[$columnIndices['Price']]) : null;
+
+            // Validate required fields
+            if (empty($title)) {
+                $errors[] = "Zeile {$lineNumber}: Titel fehlt";
+                $skipped++;
+                continue;
+            }
+
+            if (empty($productTypeStr)) {
+                $errors[] = "Zeile {$lineNumber}: ProductType fehlt";
+                $skipped++;
+                continue;
+            }
+
+            if (empty($marketplaceStr)) {
+                $errors[] = "Zeile {$lineNumber}: Marketplace fehlt";
+                $skipped++;
+                continue;
+            }
+
+            if (empty($asin)) {
+                $errors[] = "Zeile {$lineNumber}: ASIN fehlt";
+                $skipped++;
+                continue;
+            }
+
+            // Map product type
+            $productTypeId = $productTypeMap[strtolower($productTypeStr)] ?? null;
+            if (!$productTypeId) {
+                $errors[] = "Zeile {$lineNumber}: Unbekannter ProductType '{$productTypeStr}'";
+                $skipped++;
+                continue;
+            }
+
+            // Map marketplace
+            $marketId = $marketMap[strtoupper($marketplaceStr)] ?? null;
+            if (!$marketId) {
+                $errors[] = "Zeile {$lineNumber}: Unbekannter Marketplace '{$marketplaceStr}'";
+                $skipped++;
+                continue;
+            }
+
+            // Add brand to title if exists
+            $fullTitle = !empty($brand) ? "{$brand} - {$title}" : $title;
+
+            // Generate slug
+            $slug = generateSlug($fullTitle);
+
+            // Check if slug already exists
+            $stmt = $pdo->prepare("SELECT COUNT(*) FROM designs WHERE slug = ?");
+            $stmt->execute([$slug]);
+            if ($stmt->fetchColumn() > 0) {
+                // Add timestamp to make it unique
+                $slug .= '-' . time() . '-' . $rowIndex;
+            }
+
+            // Begin transaction for this design
+            $pdo->beginTransaction();
+
+            try {
+                // Insert design
+                $stmt = $pdo->prepare("
+                    INSERT INTO designs (title, slug, mockup_image_url, description, tags, is_active)
+                    VALUES (?, ?, ?, ?, ?, 1)
+                ");
+                $stmt->execute([$fullTitle, $slug, $defaultMockupImage, $description, $tags]);
+                $designId = $pdo->lastInsertId();
+
+                // Insert variant
+                $stmt = $pdo->prepare("
+                    INSERT INTO variants (design_id, market_id, product_type_id, asin, price, mockup_image_url, is_active)
+                    VALUES (?, ?, ?, ?, ?, ?, 1)
+                ");
+                $stmt->execute([
+                    $designId,
+                    $marketId,
+                    $productTypeId,
+                    $asin,
+                    !empty($price) ? floatval($price) : null,
+                    $defaultMockupImage
+                ]);
+
+                $pdo->commit();
+                $imported++;
+
+            } catch (Exception $e) {
+                $pdo->rollBack();
+                $errors[] = "Zeile {$lineNumber}: Fehler beim Speichern - " . $e->getMessage();
+                $skipped++;
+            }
+
+        } catch (Exception $e) {
+            $errors[] = "Zeile {$lineNumber}: Fehler - " . $e->getMessage();
+            $skipped++;
+        }
+    }
+
+    sendJSON([
+        'success' => true,
+        'message' => 'Bulk-Import abgeschlossen',
+        'imported' => $imported,
+        'skipped' => $skipped,
+        'total' => count($csvData),
+        'errors' => array_slice($errors, 0, 20) // Limit errors to first 20
+    ]);
+}

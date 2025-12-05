@@ -710,14 +710,11 @@ function bulkImportDesigns() {
     // Default mockup image path
     $defaultMockupImage = '/uploads/Logo_small copy.png';
 
-    // Process imports
-    $imported = 0;
-    $skipped = 0;
-    $variantsAdded = 0;
-    $errors = [];
-
+    // Group CSV data by UUID (or by title+brand if no UUID)
+    // This allows us to use US title/description for the design
+    $designGroups = [];
     foreach ($csvData as $rowIndex => $row) {
-        $lineNumber = $rowIndex + 2; // +2 because of header row and 0-based index
+        $lineNumber = $rowIndex + 2;
 
         try {
             // Extract data from row
@@ -737,91 +734,162 @@ function bulkImportDesigns() {
                 $uuid = $matches[1];
             }
 
-            // Validate required fields
-            if (empty($title)) {
-                $errors[] = "Zeile {$lineNumber}: Titel fehlt";
-                $skipped++;
+            // Group key: UUID if available, otherwise fallback to title+brand
+            $groupKey = $uuid ?: md5($brand . '|' . $title);
+
+            if (!isset($designGroups[$groupKey])) {
+                $designGroups[$groupKey] = [
+                    'uuid' => $uuid,
+                    'rows' => []
+                ];
+            }
+
+            $designGroups[$groupKey]['rows'][] = [
+                'lineNumber' => $lineNumber,
+                'brand' => $brand,
+                'title' => $title,
+                'productType' => $productTypeStr,
+                'marketplace' => $marketplaceStr,
+                'asin' => $asin,
+                'description' => $description,
+                'tags' => $tags,
+                'price' => $price
+            ];
+
+        } catch (Exception $e) {
+            // Will be handled in processing phase
+        }
+    }
+
+    // Process each design group
+    $imported = 0;
+    $skipped = 0;
+    $variantsAdded = 0;
+    $errors = [];
+
+    foreach ($designGroups as $groupKey => $group) {
+        $uuid = $group['uuid'];
+        $rows = $group['rows'];
+
+        // Find US row for title and description
+        $usRow = null;
+        foreach ($rows as $row) {
+            if (strtoupper($row['marketplace']) === 'US') {
+                $usRow = $row;
+                break;
+            }
+        }
+
+        // If no US row, use first row
+        if (!$usRow) {
+            $usRow = $rows[0];
+        }
+
+        // Use US title and description for the design
+        $designTitle = $usRow['title'];
+        $designBrand = $usRow['brand'];
+        $designDescription = $usRow['description'];
+        $designTags = $usRow['tags'];
+
+        // Validate design title
+        if (empty($designTitle)) {
+            $errors[] = "Design-Gruppe (UUID: {$uuid}): Titel fehlt";
+            $skipped += count($rows);
+            continue;
+        }
+
+        // Check if design already exists (by UUID if available and column exists)
+        $designId = null;
+        if ($hasUuidColumn && !empty($uuid)) {
+            $stmt = $pdo->prepare("SELECT id FROM designs WHERE uuid = ? AND is_active = 1");
+            $stmt->execute([$uuid]);
+            $designId = $stmt->fetchColumn();
+        }
+
+        // Create design if it doesn't exist (using US title and description)
+        if (!$designId) {
+            try {
+                $pdo->beginTransaction();
+
+                // Add brand to title if exists
+                $fullTitle = !empty($designBrand) ? "{$designBrand} - {$designTitle}" : $designTitle;
+
+                // Generate slug
+                $slug = generateSlug($fullTitle);
+
+                // Check if slug already exists
+                $stmt = $pdo->prepare("SELECT COUNT(*) FROM designs WHERE slug = ?");
+                $stmt->execute([$slug]);
+                if ($stmt->fetchColumn() > 0) {
+                    // Add timestamp to make it unique
+                    $slug .= '-' . time();
+                }
+
+                // Insert design with US title and description
+                if ($hasUuidColumn) {
+                    $stmt = $pdo->prepare("
+                        INSERT INTO designs (title, slug, uuid, mockup_image_url, description, tags, is_active)
+                        VALUES (?, ?, ?, ?, ?, ?, 1)
+                    ");
+                    $stmt->execute([$fullTitle, $slug, $uuid, $defaultMockupImage, $designDescription, $designTags]);
+                } else {
+                    $stmt = $pdo->prepare("
+                        INSERT INTO designs (title, slug, mockup_image_url, description, tags, is_active)
+                        VALUES (?, ?, ?, ?, ?, 1)
+                    ");
+                    $stmt->execute([$fullTitle, $slug, $defaultMockupImage, $designDescription, $designTags]);
+                }
+                $designId = $pdo->lastInsertId();
+                $imported++;
+
+                $pdo->commit();
+
+            } catch (Exception $e) {
+                $pdo->rollBack();
+                $errors[] = "Design '{$designTitle}': Fehler beim Erstellen - " . $e->getMessage();
+                $skipped += count($rows);
                 continue;
             }
+        }
 
-            if (empty($productTypeStr)) {
-                $errors[] = "Zeile {$lineNumber}: ProductType fehlt";
-                $skipped++;
-                continue;
-            }
-
-            if (empty($marketplaceStr)) {
-                $errors[] = "Zeile {$lineNumber}: Marketplace fehlt";
-                $skipped++;
-                continue;
-            }
-
-            if (empty($asin)) {
-                $errors[] = "Zeile {$lineNumber}: ASIN fehlt";
-                $skipped++;
-                continue;
-            }
-
-            // Map product type
-            $productTypeId = $productTypeMap[strtolower($productTypeStr)] ?? null;
-            if (!$productTypeId) {
-                $errors[] = "Zeile {$lineNumber}: Unbekannter ProductType '{$productTypeStr}'";
-                $skipped++;
-                continue;
-            }
-
-            // Map marketplace
-            $marketId = $marketMap[strtoupper($marketplaceStr)] ?? null;
-            if (!$marketId) {
-                $errors[] = "Zeile {$lineNumber}: Unbekannter Marketplace '{$marketplaceStr}'";
-                $skipped++;
-                continue;
-            }
-
-            // Check if design already exists (by UUID if available and column exists)
-            $designId = null;
-            if ($hasUuidColumn && !empty($uuid)) {
-                $stmt = $pdo->prepare("SELECT id FROM designs WHERE uuid = ? AND is_active = 1");
-                $stmt->execute([$uuid]);
-                $designId = $stmt->fetchColumn();
-            }
-
-            // Begin transaction
-            $pdo->beginTransaction();
+        // Process all variants for this design
+        foreach ($rows as $variantRow) {
+            $lineNumber = $variantRow['lineNumber'];
 
             try {
-                // If design doesn't exist, create it
-                if (!$designId) {
-                    // Add brand to title if exists
-                    $fullTitle = !empty($brand) ? "{$brand} - {$title}" : $title;
+                // Validate required fields
+                if (empty($variantRow['productType'])) {
+                    $errors[] = "Zeile {$lineNumber}: ProductType fehlt";
+                    $skipped++;
+                    continue;
+                }
 
-                    // Generate slug
-                    $slug = generateSlug($fullTitle);
+                if (empty($variantRow['marketplace'])) {
+                    $errors[] = "Zeile {$lineNumber}: Marketplace fehlt";
+                    $skipped++;
+                    continue;
+                }
 
-                    // Check if slug already exists
-                    $stmt = $pdo->prepare("SELECT COUNT(*) FROM designs WHERE slug = ?");
-                    $stmt->execute([$slug]);
-                    if ($stmt->fetchColumn() > 0) {
-                        // Add timestamp to make it unique
-                        $slug .= '-' . time() . '-' . $rowIndex;
-                    }
+                if (empty($variantRow['asin'])) {
+                    $errors[] = "Zeile {$lineNumber}: ASIN fehlt";
+                    $skipped++;
+                    continue;
+                }
 
-                    // Insert design
-                    if ($hasUuidColumn) {
-                        $stmt = $pdo->prepare("
-                            INSERT INTO designs (title, slug, uuid, mockup_image_url, description, tags, is_active)
-                            VALUES (?, ?, ?, ?, ?, ?, 1)
-                        ");
-                        $stmt->execute([$fullTitle, $slug, $uuid, $defaultMockupImage, $description, $tags]);
-                    } else {
-                        $stmt = $pdo->prepare("
-                            INSERT INTO designs (title, slug, mockup_image_url, description, tags, is_active)
-                            VALUES (?, ?, ?, ?, ?, 1)
-                        ");
-                        $stmt->execute([$fullTitle, $slug, $defaultMockupImage, $description, $tags]);
-                    }
-                    $designId = $pdo->lastInsertId();
-                    $imported++;
+                // Map product type
+                $productTypeId = $productTypeMap[strtolower($variantRow['productType'])] ?? null;
+                if (!$productTypeId) {
+                    $errors[] = "Zeile {$lineNumber}: Unbekannter ProductType '{$variantRow['productType']}'";
+                    $skipped++;
+                    continue;
+                }
+
+                // Map marketplace
+                $marketId = $marketMap[strtoupper($variantRow['marketplace'])] ?? null;
+                if (!$marketId) {
+                    $errors[] = "Zeile {$lineNumber}: Unbekannter Marketplace '{$variantRow['marketplace']}'";
+                    $skipped++;
+                    continue;
                 }
 
                 // Check if this variant already exists
@@ -834,32 +902,34 @@ function bulkImportDesigns() {
 
                 if (!$variantExists) {
                     // Insert variant
-                    $stmt = $pdo->prepare("
-                        INSERT INTO variants (design_id, market_id, product_type_id, asin, price, mockup_image_url, is_active)
-                        VALUES (?, ?, ?, ?, ?, ?, 1)
-                    ");
-                    $stmt->execute([
-                        $designId,
-                        $marketId,
-                        $productTypeId,
-                        $asin,
-                        !empty($price) ? floatval($price) : null,
-                        $defaultMockupImage
-                    ]);
-                    $variantsAdded++;
+                    $pdo->beginTransaction();
+                    try {
+                        $stmt = $pdo->prepare("
+                            INSERT INTO variants (design_id, market_id, product_type_id, asin, price, mockup_image_url, is_active)
+                            VALUES (?, ?, ?, ?, ?, ?, 1)
+                        ");
+                        $stmt->execute([
+                            $designId,
+                            $marketId,
+                            $productTypeId,
+                            $variantRow['asin'],
+                            !empty($variantRow['price']) ? floatval($variantRow['price']) : null,
+                            $defaultMockupImage
+                        ]);
+                        $variantsAdded++;
+                        $pdo->commit();
+
+                    } catch (Exception $e) {
+                        $pdo->rollBack();
+                        $errors[] = "Zeile {$lineNumber}: Fehler beim Speichern der Variante - " . $e->getMessage();
+                        $skipped++;
+                    }
                 }
 
-                $pdo->commit();
-
             } catch (Exception $e) {
-                $pdo->rollBack();
-                $errors[] = "Zeile {$lineNumber}: Fehler beim Speichern - " . $e->getMessage();
+                $errors[] = "Zeile {$lineNumber}: Fehler - " . $e->getMessage();
                 $skipped++;
             }
-
-        } catch (Exception $e) {
-            $errors[] = "Zeile {$lineNumber}: Fehler - " . $e->getMessage();
-            $skipped++;
         }
     }
 
